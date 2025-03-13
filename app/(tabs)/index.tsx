@@ -1,74 +1,91 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { useEffect, useState } from "react";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient'
+import * as SecureStore from 'expo-secure-store';
+import { useRouter } from "expo-router";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-export default function HomeScreen() {
+  const [emailError, setEmailError] = useState<string | null>(null); 
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const userLoggedIn = await SecureStore.getItemAsync('userLoggedIn');
+      console.log(userLoggedIn);
+      setIsLoggedIn(userLoggedIn === 'true');
+    };
+
+    checkLoginStatus();
+  }, []);
+
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.replace('/home');  
+    }
+  }, [isLoggedIn, router]);
+
+  const validateEmail = (email: string) => {
+    const regex = /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/;
+    return regex.test(email);
+  };
+
+  const handleLogin = async () => {
+
+    if (!email || !password) {
+      Alert.alert('Erro de Validação', 'Por favor preencha ambos os campos');
+      return; 
+    }
+
+    if (!validateEmail(email)) {
+      setEmailError('Por favor inserir um e-mail válido');
+      return;
+    }
+
+    console.log('Login attempt:', email, password);
+    await SecureStore.setItemAsync('userLoggedIn', 'true');
+    router.push('/home'); 
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View className="flex-1 justify-center items-center  p-6"
+    >
+      <LinearGradient colors={['#FFFF','#FFFF','#FFFF']} className=" absolute left-0 right-0 top-0 h-screen opacity-" />
+      <Text className="text-2xl font-bold mb-4">Login</Text>
+
+      <TextInput
+        className="w-full p-3 border border-gray-300 mb-3 bg-white"
+        placeholder="E-mail"
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          setEmailError(null);
+        }}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      {emailError && (
+        <Text className="text-red-500 text-sm mb-3">{emailError}</Text>
+      )}
+      <TextInput
+        className="w-full p-3 border border-gray-300 mb-3 bg-white"
+        placeholder="Senha"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+        
+      <TouchableOpacity
+        className="bg-blue-500 w-full p-3 rounded-lg"
+        onPress={handleLogin}
+      >
+        <Text className="text-white text-center font-bold">Entrar</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
