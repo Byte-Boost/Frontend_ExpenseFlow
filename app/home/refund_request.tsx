@@ -1,22 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, Image, Alert, ScrollView  } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { formatCurrency } from '@/utils/formmatters';
+import * as ImagePicker from 'expo-image-picker';
 
 const RefundRequestScreen = () => {
     const [refundType, setRefundType] = useState('');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [receiptUri, setReceiptUri] = useState(null);
+    const [receiptUri, setReceiptUri] = useState<string | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [totalValue, setTotalValue] = useState(0);
     // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
 
-    const handleImageUpload = () => {
-        // Handle image upload here
+    const handleImageUpload = async () => {
+        // Requests permission
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permissão negada', 'Você precisa permitir o acesso à galeria.');
+            return;
+        }
+
+        // Open the gallery to choose a photo
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            // allowsEditing: true, // Allows image cropping
+            quality: 1, // Maximum image quality
+        });
+
+        if (!result.canceled) {
+            setReceiptUri(result.assets[0].uri); // Stores the image URI
+        }
     };
+
+    const removeImage = () => {
+        setReceiptUri(null)
+    }
 
     useEffect(() => {
         if (amount) {
@@ -45,7 +66,7 @@ const RefundRequestScreen = () => {
     };
 
     return (
-        <View className="p-5 bg-gray-50 h-full">
+        <ScrollView className="p-5 bg-gray-50 h-full">
             <Text className="text-2xl font-bold text-center mb-6">Pedido de Reembolso</Text>
 
             <Text className="mb-2 text-lg font-bold">Tipo de Reembolso</Text>
@@ -117,7 +138,8 @@ const RefundRequestScreen = () => {
 
             {receiptUri && (
                 <View className="mb-6">
-                    <Text className="text-lg mb-2">Recibo Enviado</Text>
+                    <Text className="text-lg mb-2">Imagem recebida</Text>
+                    <MaterialIcons name={refundType == 'value' ?  'close' : 'close'} size={20} color="#FF0000" onPress={removeImage}/>
                     <Image
                         source={{ uri: receiptUri }}
                         style={{ width: 150, height: 150, borderRadius: 8 }}
@@ -131,12 +153,12 @@ const RefundRequestScreen = () => {
                 </View>
 
             <TouchableOpacity
-                className="w-full p-3 rounded-lg bg-green-500"
+                className="w-full p-3 mb-10 rounded-lg bg-green-500"
                 onPress={handleSubmit}
             >
                 <Text className="text-white text-center font-bold">Enviar Pedido de Reembolso</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 };
 
