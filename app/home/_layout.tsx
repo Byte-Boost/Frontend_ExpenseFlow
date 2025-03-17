@@ -21,6 +21,8 @@ export default function RootLayout() {
             iconName = focused ? "cash" : "cash-outline"; 
           } else if (route.name ===  "account_settings" ){  
             iconName = focused ? "settings" : "settings-outline"
+          } else if (route.name === "refund_list") {
+            iconName = focused ? "list" : "list-outline";
           }
 
           return <Ionicons name={iconName as any} size={size} color={focused ? "#FF8C00" : "gray"} />;
@@ -43,6 +45,7 @@ export default function RootLayout() {
       })}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="refund_list" options={{ title: "Lista" }} />
       <Tabs.Screen name="refund_request" options={{ title: "Pedir Reembolso" }} />
       <Tabs.Screen name="account_settings" options={{ title: "Configurações" }} />
     </Tabs>
