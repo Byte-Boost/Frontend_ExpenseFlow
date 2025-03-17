@@ -10,32 +10,34 @@ const RefundRequestScreen = () => {
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
     const [receiptUri, setReceiptUri] = useState<string | null>(null);
-    const [image, setImage] = useState<string | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [totalValue, setTotalValue] = useState(0);
     // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
 
     const handleImageUpload = async () => {
-        // Solicita permissão
+        // Requests permission
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        console.log(status)
         if (status !== 'granted') {
             Alert.alert('Permissão negada', 'Você precisa permitir o acesso à galeria.');
             return;
         }
 
-        // Abre a galeria para escolher uma foto
+        // Open the gallery to choose a photo
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            // allowsEditing: true, // Permite corte da imagem
-            quality: 1, // Qualidade máxima da imagem
+            // allowsEditing: true, // Allows image cropping
+            quality: 1, // Maximum image quality
         });
 
         if (!result.canceled) {
-            setReceiptUri(result.assets[0].uri); // 🔹 Armazena apenas a URI da imagem
+            setReceiptUri(result.assets[0].uri); // Stores the image URI
         }
     };
+
+    const removeImage = () => {
+        setReceiptUri(null)
+    }
 
     useEffect(() => {
         if (amount) {
@@ -136,7 +138,8 @@ const RefundRequestScreen = () => {
 
             {receiptUri && (
                 <View className="mb-6">
-                    <Text className="text-lg mb-2">Recibo Enviado</Text>
+                    <Text className="text-lg mb-2">Imagem recebida</Text>
+                    <MaterialIcons name={refundType == 'value' ?  'close' : 'close'} size={20} color="#FF0000" onPress={removeImage}/>
                     <Image
                         source={{ uri: receiptUri }}
                         style={{ width: 150, height: 150, borderRadius: 8 }}
@@ -150,7 +153,7 @@ const RefundRequestScreen = () => {
                 </View>
 
             <TouchableOpacity
-                className="w-full p-3 rounded-lg bg-green-500"
+                className="w-full p-3 mb-10 rounded-lg bg-green-500"
                 onPress={handleSubmit}
             >
                 <Text className="text-white text-center font-bold">Enviar Pedido de Reembolso</Text>
