@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TextInput, TouchableOpacity, useColorScheme, View } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient'
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from "expo-router";
@@ -15,6 +15,7 @@ export default function Index() {
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
+  const theme = useColorScheme();
 
   const { showAlert, AlertComponent } = useAlert();
 
@@ -28,7 +29,6 @@ export default function Index() {
     checkLoginStatus();
   }, []);
 
-
   useEffect(() => {
     if (isLoggedIn) {
       router.replace('/home');
@@ -41,7 +41,6 @@ export default function Index() {
   };
 
   const handleLogin = async () => {
-
     if (!email || !password) {
       showAlert("Oops!", "Por Favor preencha ambos os campos", "error");
       return;
@@ -58,16 +57,20 @@ export default function Index() {
   };
 
   return (
-    <View className="flex-1 justify-center items-center  p-6"
-    >
-      <LinearGradient colors={['#f47f1f', '#f25f22', '#ea2223']} className=" absolute left-0 right-0 top-0 h-screen opacity-" />
+    <View className="flex-1 justify-center items-center p-6">
+      <LinearGradient colors={['#f47f1f', '#f25f22', '#ea2223']} className="absolute left-0 right-0 top-0 h-screen" />
+
       <Text className="text-2xl font-extrabold mb-4 text-white">Login</Text>
 
-      <View className="w-full h-fit p-10 bg-white rounded-3xl flex flex-col gap-5">
-
+      <View className={`w-full h-fit p-10 rounded-3xl flex flex-col gap-5 
+        ${theme === 'dark' ? 'bg-gray-900 border border-gray-700' : 'bg-white shadow-lg'}`}
+      >
         <TextInput
-          className={`w-full p-3 border border-black mb-3 bg-white ${emailError? 'border-red-500': ''}`}
+          className={`w-full p-3 rounded-lg border ${
+            theme === 'dark' ? 'bg-gray-800 text-white border-gray-600' : 'bg-gray-100 text-black border-gray-300'
+          } ${emailError ? 'border-red-500' : ''}`}
           placeholder="E-mail"
+          placeholderTextColor={theme === 'dark' ? '#bbb' : '#666'}
           value={email}
           onChangeText={(text) => {
             setEmail(text);
@@ -80,22 +83,29 @@ export default function Index() {
         {emailError && (
           <Text className="text-red-500 text-md mb-3">{emailError}</Text>
         )}
-        <View className="flex flex-row items-center ">
+
+        <View className="relative">
           <TextInput
-            className="w-full border border-black  px-4 py-3 pr-12 text-base"
-            placeholder="Senha" 
+            className={`w-full p-3 rounded-lg border ${
+              theme === 'dark' ? 'bg-gray-800 text-white border-gray-600' : 'bg-gray-100 text-black border-gray-300'
+            }`}
+            placeholder="Senha"
+            placeholderTextColor={theme === 'dark' ? '#bbb' : '#666'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
           />
-      <TouchableOpacity 
-      onPress={() => setShowPassword(!showPassword)} 
-      className="absolute right-4 top-1/2 -translate-y-1/2 ">
-        <Feather name={showPassword ? "eye" : "eye-off"} size={22} color="#555" />
-      </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setShowPassword(!showPassword)} 
+            className="absolute right-4 top-1/2 -translate-y-1/2"
+          >
+            <Feather name={showPassword ? "eye" : "eye-off"} size={22} color={theme === 'dark' ? "#aaa" : "#555"} />
+          </TouchableOpacity>
         </View>
+
         <TouchableOpacity
-          className="bg-[#f47f1f] w-full p-3 rounded-lg"
+          className="w-full p-3 rounded-lg"
+          style={{ backgroundColor: "#f47f1f" }}
           onPress={handleLogin}
         >
           <Text className="text-white text-center font-bold">Entrar</Text>
