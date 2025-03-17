@@ -1,21 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, Image, Alert, ScrollView  } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { formatCurrency } from '@/utils/formmatters';
+import * as ImagePicker from 'expo-image-picker';
 
 const RefundRequestScreen = () => {
     const [refundType, setRefundType] = useState('');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [receiptUri, setReceiptUri] = useState(null);
+    const [receiptUri, setReceiptUri] = useState<string | null>(null);
+    const [image, setImage] = useState<string | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [totalValue, setTotalValue] = useState(0);
     // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
 
-    const handleImageUpload = () => {
-        // Handle image upload here
+    const handleImageUpload = async () => {
+        // Solicita permissão
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        console.log(status)
+        if (status !== 'granted') {
+            Alert.alert('Permissão negada', 'Você precisa permitir o acesso à galeria.');
+            return;
+        }
+
+        // Abre a galeria para escolher uma foto
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            // allowsEditing: true, // Permite corte da imagem
+            quality: 1, // Qualidade máxima da imagem
+        });
+
+        if (!result.canceled) {
+            setReceiptUri(result.assets[0].uri); // 🔹 Armazena apenas a URI da imagem
+        }
     };
 
     useEffect(() => {
@@ -45,7 +64,7 @@ const RefundRequestScreen = () => {
     };
 
     return (
-        <View className="p-5 bg-gray-50 h-full">
+        <ScrollView className="p-5 bg-gray-50 h-full">
             <Text className="text-2xl font-bold text-center mb-6">Pedido de Reembolso</Text>
 
             <Text className="mb-2 text-lg font-bold">Tipo de Reembolso</Text>
@@ -136,7 +155,7 @@ const RefundRequestScreen = () => {
             >
                 <Text className="text-white text-center font-bold">Enviar Pedido de Reembolso</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 };
 
