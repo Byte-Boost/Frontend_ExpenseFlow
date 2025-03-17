@@ -20,10 +20,10 @@ export default function RootLayout() {
           } else if (route.name === "refund_request") {
             iconName = focused ? "cash" : "cash-outline"; 
           } else if (route.name ===  "account_settings" ){  
-            iconName = focused ? "settings" : "settings-outline"
+            iconName = focused ? "settings" : "settings-outline";
           } else if (route.name === "refund_list") {
             iconName = focused ? "list" : "list-outline";
-          }
+          };
 
           return <Ionicons name={iconName as any} size={size} color={focused ? "#FF8C00" : "gray"} />;
         },
