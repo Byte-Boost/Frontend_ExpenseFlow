@@ -4,6 +4,9 @@ import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { formatCurrency } from '@/utils/formmatters';
 import * as ImagePicker from 'expo-image-picker';
+import Refund from '@/services/routes/refund';
+
+const refund = new Refund()
 
 const RefundRequestScreen = () => {
     const [refundType, setRefundType] = useState('');
@@ -14,6 +17,9 @@ const RefundRequestScreen = () => {
     const [totalValue, setTotalValue] = useState(0);
     // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
+    // Limit to refund
+    const limit = 1000
+
 
     const handleImageUpload = async () => {
         // Requests permission
@@ -39,6 +45,8 @@ const RefundRequestScreen = () => {
         setReceiptUri(null)
     }
 
+    
+
     useEffect(() => {
         if (amount) {
             const quantity = parseFloat(amount);
@@ -55,14 +63,17 @@ const RefundRequestScreen = () => {
         }
     }, [refundType, amount]);
 
-    const handleSubmit = () => {
-        console.log({
-            refundType,
-            description,
-            amount,
-            receiptUri,
-            totalValue,
-        });
+    const handleSubmit = async () => {
+        if(refundType && amount && receiptUri) {
+            if(totalValue > limit) {
+                if(description) {
+                    Alert.alert("Aviso", "O total requerido excedeu o limite máximo de reembolso.");
+                    await refund.postRefund(1, new Date(), refundType, parseFloat(amount), receiptUri.toString(), description, "pending")
+                }
+            } else {
+                await refund.postRefund(1, new Date(), refundType, parseFloat(amount), receiptUri.toString(), description, "pending")
+            }
+        }
     };
 
     return (
