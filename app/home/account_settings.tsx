@@ -28,7 +28,7 @@ export default function AccountSettings() {
             </View>
             
             <View className="h-3/4">
-            <TouchableOpacity
+            {/* <TouchableOpacity
                 className=" p-4  border-b-2 rounded-lg "
                 onPress={() => {
                     SecureStore.deleteItemAsync('');
@@ -63,7 +63,7 @@ export default function AccountSettings() {
                 }}
                 >
                 <Text className="text-gray  ">Sobre o Aplicativo</Text>                
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity
                 className=" p-4 pr-96 border-b-2 rounded-lg "
                 onPress={() => {
