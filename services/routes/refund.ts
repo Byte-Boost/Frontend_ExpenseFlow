@@ -24,9 +24,4 @@ export default class Refund {
             status: status
         })
     }
-
-    // Maybe it was wrong
-    public async authRefund(id: number) {
-        await api.post(`${url}/${id}/authorize`)
-    }
 }
