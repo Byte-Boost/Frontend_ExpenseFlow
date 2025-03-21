@@ -24,10 +24,10 @@ export default function AccountSettings() {
 
             <View style={{backgroundColor:"#FF8C00"}} className=" h-36 rounded-full justify-center items-center w-36 mt-6" ><Ionicons name="person" size={70}/></View>
 
-            <Text className="mt-2 mb-3 text-gray text-lg">EMAIL</Text>
+            <Text className="mt-2 mb3 text-gray text-lg">EMAIL</Text>
             </View>
             
-            <View className="h-3/4">
+            <View className="h-3/4 pt-7">
             {/* <TouchableOpacity
                 className=" p-4  border-b-2 rounded-lg "
                 onPress={() => {
@@ -65,7 +65,7 @@ export default function AccountSettings() {
                 <Text className="text-gray  ">Sobre o Aplicativo</Text>                
             </TouchableOpacity> */}
             <TouchableOpacity
-                className=" p-4 pr-96 border-b-2 rounded-lg "
+                className=" p-4 pr-96 bg-[#FFFFFF] border-b-2 border-red-700 rounded-lg "
                 onPress={() => {
                     SecureStore.deleteItemAsync('userLoggedIn');
                     router.replace('/');

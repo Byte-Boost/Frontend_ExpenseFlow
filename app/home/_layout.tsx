@@ -20,7 +20,7 @@ export default function RootLayout() {
           } else if (route.name === "refund_request") {
             iconName = focused ? "cash" : "cash-outline"; 
           } else if (route.name ===  "account_settings" ){  
-            iconName = focused ? "person" : "settings-outline";
+            iconName = focused ? "person" : "person-outline";
           } else if (route.name === "refund_list") {
             iconName = focused ? "list" : "list-outline";
           };
