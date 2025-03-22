@@ -13,15 +13,13 @@ export default class Refund {
         return response.data
     }
 
-    public async postRefund(userId: number, date: Date, type: string, value: number, attachmentRef: string, description: string, status: string) {
+    public async postRefund(userId: number, type: string, value: number, attachmentRef: string, description: string) {
         await api.post(`${url}/`, {
             userId: userId,
-            date: date,
             type: type,
             value: value,
             attachmentRef: attachmentRef,
-            description: description,
-            status: status
+            description: description
         })
     }
 }

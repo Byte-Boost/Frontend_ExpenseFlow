@@ -72,13 +72,22 @@ const RefundRequestScreen = () => {
         if(refundType && amount && receiptUri) {
             if(isOffLimit) {
                 if(description) {
-                    Alert.alert("Aviso", "O total requerido excedeu o limite máximo de reembolso.");
-                    await refund.postRefund(1, new Date(), refundType, parseFloat(amount), receiptUri.toString(), description, "pending")
+                    await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
+                    Alert.alert("Sucesso", `Pedido de reembolso bem sucedido, excedendo o limite máximo de ${limit}.`);
+                    setAmount("");
+                    setDescription("");
+                    setRefundType("");
+                    setReceiptUri(null);
                 } else {
                     Alert.alert("Aviso", "Você excedeu o limite máximo, portanto a descrição é obrigatória");
                 }
             } else {
-                await refund.postRefund(1, new Date(), refundType, parseFloat(amount), receiptUri.toString(), description, "pending")
+                await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
+                Alert.alert("Sucesso", `Pedido de reembolso bem sucedido!`);
+                setAmount("");
+                setDescription("");
+                setRefundType("");
+                setReceiptUri(null);
             }
         } else {
             Alert.alert("Aviso", "Os seguintes campos são obrigatórios: \n\n - Tipo de Reembolso\n - Valor \n - Recibo")
