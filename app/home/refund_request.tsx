@@ -4,6 +4,9 @@ import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { formatCurrency } from '@/utils/formmatters';
 import * as ImagePicker from 'expo-image-picker';
+import Refund from '@/services/routes/refund';
+
+const refund = new Refund()
 
 const RefundRequestScreen = () => {
     const [refundType, setRefundType] = useState('');
@@ -12,8 +15,12 @@ const RefundRequestScreen = () => {
     const [receiptUri, setReceiptUri] = useState<string | null>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [totalValue, setTotalValue] = useState(0);
+    const [isOffLimit, setIsOffLimit] = useState(false);
     // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
+    // Limit to refund
+    const limit = 1000
+
 
     const handleImageUpload = async () => {
         // Requests permission
@@ -48,21 +55,43 @@ const RefundRequestScreen = () => {
                 setTotalValue(total);
             }
             else {
-                setTotalValue(parseFloat(amount) || 0)
+                setTotalValue(parseFloat(amount) || 0);
             }
         } else {
             setTotalValue(parseFloat(amount) || 0);
         }
+        setIsOffLimit(totalValue > limit)
     }, [refundType, amount]);
 
-    const handleSubmit = () => {
-        console.log({
-            refundType,
-            description,
-            amount,
-            receiptUri,
-            totalValue,
-        });
+    //Grants variable to be updated in real time
+    useEffect(() => {
+        setIsOffLimit(totalValue > limit)
+    })
+
+    const handleSubmit = async () => {
+        if(refundType && amount && receiptUri) {
+            if(isOffLimit) {
+                if(description) {
+                    await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
+                    Alert.alert("Sucesso", `Pedido de reembolso bem sucedido, excedendo o limite máximo de ${limit}.`);
+                    setAmount("");
+                    setDescription("");
+                    setRefundType("");
+                    setReceiptUri(null);
+                } else {
+                    Alert.alert("Aviso", "Você excedeu o limite máximo, portanto a descrição é obrigatória");
+                }
+            } else {
+                await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
+                Alert.alert("Sucesso", `Pedido de reembolso bem sucedido!`);
+                setAmount("");
+                setDescription("");
+                setRefundType("");
+                setReceiptUri(null);
+            }
+        } else {
+            Alert.alert("Aviso", "Os seguintes campos são obrigatórios: \n\n - Tipo de Reembolso\n - Valor \n - Recibo")
+        }
     };
 
     return (
@@ -95,7 +124,7 @@ const RefundRequestScreen = () => {
                     fontWeight: '400',
                     marginLeft: 10,
                 }}
-            />
+                />
 
             <Text className="mb-2 text-lg font-bold">Descrição</Text>
             <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
@@ -106,10 +135,11 @@ const RefundRequestScreen = () => {
                     placeholder="Descreva a razão do reembolso"
                     multiline
                     className="ml-2 w-full h-24 text-left"
-                />
+                    />
             </View>
 
             <Text className="mb-2 text-lg font-bold">Valor</Text>
+                {isOffLimit ? <Text className="text-lg pb-2 font-bold text-[#ff4a11]"> Você está acima do limite de {limit} </Text> : <></>}
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 8, borderColor: '#ccc', marginBottom: 20 }}>
                 <MaterialIcons name={refundType == 'value' ?  'attach-money' : 'add-box'} size={20} color="#6B7280" />
                 <TextInput
