@@ -8,33 +8,51 @@ import Refund from '@/services/routes/refund';
 
 import { Avatar, Icon, ListItem } from '@rneui/themed';
 
+//when an expense is closed or another expense is opened, the closed expense is sent to the backend 
+//the place to insert the code is commented
+//the handleSubmit for submitting the refund has not been changed yet
+
 const refund = new Refund()
+
+interface Accordion {
+    id: number;
+    refundType: string;
+    description: string;
+    receiptUri: string | null;
+    totalValue: number;
+}
 
 const RefundRequestScreen = () => {
 
-    const [accordions, setAccordions] = useState([
-        { 
-            id: 1, refundType: '', 
-            description: '', 
-            receiptUri: null as string | null, 
-            totalValue: 0, 
-            //isOffLimit: false 
-        }
-    ]);
-
+    const [accordions, setAccordions] = useState<Accordion[]>([]);
     const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
+    const [refundType, setRefundType] = useState('');
+    const [description, setDescription] = useState('');
+    const [amount, setAmount] = useState('');
+    const [receiptUri, setReceiptUri] = useState<string | null>(null);
+    const [isOffLimit, setIsOffLimit] = useState(false);
+    const [quantityMult, setQuantityMult] = useState(10);
+    const limit = 1000
+    const [isFirstAction, setIsFirstAction] = useState(true);
+
+    const isSubmitDisabled =
+        isFirstAction ||
+        expandedAccordionId !== null &&
+        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri);
 
     const addAccordion = () => {
-        setAccordions([...accordions,
-            {
-                id: accordions.length + 1,
-                refundType: '',
-                description: '',
-                receiptUri: null,
-                totalValue: 0,
-                //isOffLimit: false,
-            }
-        ]);
+        const newAccordion: Accordion = {
+            id: accordions.length + 1,
+            refundType: '',
+            description: '',
+            receiptUri: null,
+            totalValue: 0,
+        };
+        setAccordions([...accordions, newAccordion]);
+        setExpandedAccordionId(newAccordion.id);
     };
 
     const deleteAccordion = (id: number) => {
@@ -73,15 +91,6 @@ const RefundRequestScreen = () => {
             )
         );
     };
-
-    const [refundType, setRefundType] = useState('');
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [receiptUri, setReceiptUri] = useState<string | null>(null);
-    const [isOffLimit, setIsOffLimit] = useState(false);
-    const [quantityMult, setQuantityMult] = useState(10);
-    const limit = 1000
-
 
     const handleImageUpload = async (id: number) => {
         // Requests permission
@@ -275,10 +284,18 @@ const RefundRequestScreen = () => {
                     !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
                         ? 'bg-gray-300'
                         : 'bg-blue-500'
-                    }`
-                }
-                onPress={addAccordion}
+                }`}
+                onPress={async () => {
+                    if (isFirstAction) {
+                        // Envia o código para o backend
+                        setIsFirstAction(false); // Muda o estado para o modo "Adicionar Despesa"
+                        addAccordion();
+                    } else {
+                        addAccordion(); // Adiciona uma nova despesa
+                    }
+                }}
                 disabled={
+                    !isFirstAction &&
                     expandedAccordionId !== null &&
                     (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
                     !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
@@ -295,29 +312,18 @@ const RefundRequestScreen = () => {
                         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
                             ? 'text-gray-500'
                             : 'text-white'
-                        }`
-                    }
+                    }`}
                 >
-                    Adicionar Despesa
+                    {isFirstAction ? "Começar Reembolso" : "Adicionar Despesa"}
                 </Text>
             </TouchableOpacity>
 
             {/* Submit */}
             <TouchableOpacity
                 onPress={handleSubmit}
-                disabled={
-                    expandedAccordionId !== null &&
-                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
-                }
+                disabled={isSubmitDisabled}
                 className={`w-full p-3 mb-10 rounded-lg ${
-                    expandedAccordionId !== null &&
-                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                    isSubmitDisabled
                         ? 'bg-gray-300'
                         : 'bg-green-500'
                     }`
