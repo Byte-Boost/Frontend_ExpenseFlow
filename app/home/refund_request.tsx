@@ -17,7 +17,8 @@ const RefundRequestScreen = () => {
             id: 1, refundType: '', 
             description: '', 
             receiptUri: null as string | null, 
-            totalValue: 0, isOffLimit: false 
+            totalValue: 0, 
+            //isOffLimit: false 
         }
     ]);
 
@@ -31,7 +32,7 @@ const RefundRequestScreen = () => {
                 description: '',
                 receiptUri: null,
                 totalValue: 0,
-                isOffLimit: false,
+                //isOffLimit: false,
             }
         ]);
     };
@@ -47,6 +48,21 @@ const RefundRequestScreen = () => {
     };
 
     const toggleAccordion = (id: number) => {
+        const currentAccordion = accordions.find((accordion) => accordion.id === expandedAccordionId);
+        if (expandedAccordionId !== null) {
+            if (currentAccordion) {
+                const { refundType, description, totalValue, receiptUri } = currentAccordion;
+                if (!refundType || !description || totalValue <= 0 || !receiptUri) {
+                    Alert.alert(
+                        "Aviso",
+                        "Preencha todos os campos antes de abrir outra Despesa"
+                    );
+                    return;
+                }
+            }
+        }
+        //send info to back
+        //code go here
         setExpandedAccordionId(expandedAccordionId === id ? null : id);
     };
 
@@ -62,12 +78,8 @@ const RefundRequestScreen = () => {
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
     const [receiptUri, setReceiptUri] = useState<string | null>(null);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [totalValue, setTotalValue] = useState(0);
     const [isOffLimit, setIsOffLimit] = useState(false);
-    // Placeholder value change when we set groups and etc.
     const [quantityMult, setQuantityMult] = useState(10);
-    // Limit to refund
     const limit = 1000
 
 
@@ -94,29 +106,6 @@ const RefundRequestScreen = () => {
     const removeImage = () => {
         setReceiptUri(null)
     }
-
-    //fix total value
-    useEffect(() => {
-        if (amount) {
-            const quantity = parseFloat(amount);
-            const placeholderValue = quantityMult;
-            if (refundType === 'quantity') {
-                const total = quantity * placeholderValue;
-                setTotalValue(total);
-            }
-            else {
-                setTotalValue(parseFloat(amount) || 0);
-            }
-        } else {
-            setTotalValue(parseFloat(amount) || 0);
-        }
-        setIsOffLimit(totalValue > limit)
-    }, [refundType, amount]);
-
-    //Grants variable to be updated in real time
-    useEffect(() => {
-        setIsOffLimit(totalValue > limit)
-    })
 
     //Fix handle submit
     const handleSubmit = async () => {
@@ -166,36 +155,45 @@ const RefundRequestScreen = () => {
                 >
 
                     {/* Conteúdo do Accordion */}
-                    
 
-                    {/*not working...?*/}
+                    {(!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.receiptUri) && (
+                                            <View className="bg-red-100 p-3 rounded-lg mb-4">
+                                                <Text className="text-red-500 font-bold">
+                                                    Preencha todos os campos obrigatórios:
+                                                </Text>
+                                                {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
+                                                {!accordion.description && <Text>- Descrição</Text>}
+                                                {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
+                                                {!accordion.receiptUri && <Text>- Recibo</Text>}
+                                            </View>
+                        )}                     
+
+                    {/*Change Type*/}
                     <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
-                    <DropDownPicker
-                        open={dropdownOpen}
-                        value={accordion.refundType}
-                        items={[
-                            {
-                                label: 'Valor',
-                                value: 'value',
-                                icon: () => <Ionicons name="pricetag" size={20} color="gray" style={{ marginRight: 10 }} />,
-                            },
-                            {
-                                label: 'Quantidade',
-                                value: 'quantity',
-                                icon: () => <Ionicons name="car-sport" size={20} color="gray" style={{ marginRight: 10 }} />,
-                            },
-                        ]}
-                        setOpen={setDropdownOpen}
-                        setValue={(value) => updateAccordion(accordion.id, 'refundType', value)}
-                        placeholder="Escolha o Tipo de Despesa"
-                        style={{ borderColor: '#ccc' }}
-                        containerStyle={{ marginBottom: 20 }}
-                        placeholderStyle={{
-                            fontSize: 16,
-                            fontWeight: '400',
-                            marginLeft: 10,
-                        }}
-                    />
+                    <View className="flex-row justify-between mb-4">
+                        <TouchableOpacity
+                            onPress={() => updateAccordion(accordion.id, 'refundType', 'value')}
+                            className={`flex-1 flex-row items-center p-2 rounded-lg border mr-2 ${
+                                accordion.refundType === 'value' ? 'border-blue-500' : 'border-gray-300'
+                            }`}
+                        >
+                            <Ionicons name="pricetag" size={20} color={accordion.refundType === 'value' ? 'blue' : 'gray'} />
+                            <Text className={`ml-2 ${accordion.refundType === 'value' ? 'text-blue-500' : 'text-gray-700'}`}>
+                                Valor
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => updateAccordion(accordion.id, 'refundType', 'quantity')}
+                            className={`flex-1 flex-row items-center p-2 rounded-lg border ml-2 ${
+                                accordion.refundType === 'quantity' ? 'border-blue-500' : 'border-gray-300'
+                            }`}
+                        >
+                            <Ionicons name="car-sport" size={20} color={accordion.refundType === 'quantity' ? 'blue' : 'gray'} />
+                            <Text className={`ml-2 ${accordion.refundType === 'quantity' ? 'text-blue-500' : 'text-gray-700'}`}>
+                                Quantidade
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
 
                     <Text className="mb-2 text-lg font-bold">Descrição</Text>
                     <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
@@ -256,10 +254,10 @@ const RefundRequestScreen = () => {
 
 
 
-                    {/* Botão para deletar o Accordion */}
+                    {/* Delete Accordion */}
                     <TouchableOpacity
                         className="bg-red-500 mb-10 p-2 rounded-lg mt-4"
-                        onPress={() => deleteAccordion(accordion.id)} // Botão para deletar o Accordion
+                        onPress={() => deleteAccordion(accordion.id)}
                     >
                         <Text className="text-white text-center font-bold">Deletar Despesa</Text>
                     </TouchableOpacity>
@@ -267,21 +265,78 @@ const RefundRequestScreen = () => {
                 </ListItem.Accordion>
             ))}
 
-                
-
-
+            {/* Add Accordion */}
             <TouchableOpacity
-                className="w-full p-3 mb-10 rounded-lg bg-blue-500"
-                onPress={addAccordion} // Botão para adicionar um novo Accordion
+                className={`w-full p-3 mb-10 rounded-lg ${
+                    expandedAccordionId !== null &&
+                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                        ? 'bg-gray-300'
+                        : 'bg-blue-500'
+                    }`
+                }
+                onPress={addAccordion}
+                disabled={
+                    expandedAccordionId !== null &&
+                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                }
             >
-                <Text className="text-white text-center font-bold">Adicionar Despesa</Text>
+                <Text
+                    className={`text-center font-bold ${
+                        expandedAccordionId !== null &&
+                        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                            ? 'text-gray-500'
+                            : 'text-white'
+                        }`
+                    }
+                >
+                    Adicionar Despesa
+                </Text>
             </TouchableOpacity>
 
+            {/* Submit */}
             <TouchableOpacity
-                className="w-full p-3 mb-10 rounded-lg bg-green-500"
                 onPress={handleSubmit}
+                disabled={
+                    expandedAccordionId !== null &&
+                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                }
+                className={`w-full p-3 mb-10 rounded-lg ${
+                    expandedAccordionId !== null &&
+                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                        ? 'bg-gray-300'
+                        : 'bg-green-500'
+                    }`
+                }
             >
-                <Text className="text-white text-center font-bold">Enviar Pedido de Reembolso</Text>
+                <Text 
+                    className={`text-center font-bold ${
+                        expandedAccordionId !== null &&
+                        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
+                        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                            ? 'text-gray-500'
+                            : 'text-white'
+                        }`
+                    }
+                >
+                    Enviar Pedido de Reembolso
+                </Text>
             </TouchableOpacity>
 
         </ScrollView>
