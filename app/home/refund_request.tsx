@@ -1,19 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, Image, Alert, ScrollView  } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView  } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
-import DropDownPicker from 'react-native-dropdown-picker';
 import { formatCurrency } from '@/utils/formmatters';
 import * as ImagePicker from 'expo-image-picker';
-import Refund from '@/services/routes/refund';
 
-import { Avatar, Icon, ListItem } from '@rneui/themed';
+import { ListItem } from '@rneui/themed';
+import RefundService from '@/services/refundService';
+import Refund from '@/utils/refund';
 
-//press "começar rembolso" to send a request to the backend to initiate the refund process
-//you can add as many expenses as needed. Each accordion represents an expense, and saving an expense sends its data to the backend
-//you can submit the refund request (The code to handle this submission is not implemented yet)
-//the place to insert the backend code is commented
-
-const refund = new Refund()
+const _refundService = new RefundService();
 
 interface Accordion {
     id: number;
@@ -25,6 +20,16 @@ interface Accordion {
 }
 
 const RefundRequestScreen = () => {
+    const [refund, setRefund] = useState<Refund | null>(null);
+    const createNewRefund = async ()=>{
+        if (isFirstAction) {
+            let id = await _refundService.createRefund();
+            console.log("d")
+            setRefund(new Refund(id));
+            setIsFirstAction(false);
+        }                         
+        addAccordion();
+    }
 
     const [accordions, setAccordions] = useState<Accordion[]>([]);
     const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
@@ -39,19 +44,14 @@ const RefundRequestScreen = () => {
 
     const isAccordionComplete = (
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
+        !(accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue ?? 0 <= 0) ||
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri
     );
-
-    const startRefund = async () => {
-        // Send code to backend to start the refund process
-    };
 
     const isSubmitDisabled =
         isFirstAction ||
         expandedAccordionId !== null && isAccordionComplete ||
-        !accordions.some((accordion) => accordion.isSaved);
+        accordions.some((accordion) => accordion.isSaved == false);
 
     const addAccordion = () => {
         const newAccordion: Accordion = {
@@ -80,8 +80,8 @@ const RefundRequestScreen = () => {
         const currentAccordion = accordions.find((accordion) => accordion.id === expandedAccordionId);
         if (expandedAccordionId !== null) {
             if (currentAccordion) {
-                const { refundType, description, totalValue, receiptUri } = currentAccordion;
-                if (!refundType || !description || totalValue <= 0 || !receiptUri) {
+                const { refundType, totalValue, receiptUri } = currentAccordion;
+                if (!refundType || totalValue <= 0 || !receiptUri) {
                     Alert.alert(
                         "Aviso",
                         "Preencha todos os campos antes de abrir outra Despesa"
@@ -108,9 +108,9 @@ const RefundRequestScreen = () => {
             return;
         }
 
-        const { refundType, description, totalValue, receiptUri } = accordion;
+        const { refundType, totalValue, receiptUri } = accordion;
 
-        if (!refundType || !description || totalValue <= 0 || !receiptUri) {
+        if (!refundType || totalValue <= 0 || !receiptUri) {
             Alert.alert("Aviso", "Preencha todos os campos obrigatórios antes de salvar.");
             return;
         }
@@ -196,17 +196,16 @@ const RefundRequestScreen = () => {
 
                     {/* Conteúdo do Accordion */}
 
-                    {(!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.receiptUri) && (
-                                            <View className="bg-red-100 p-3 rounded-lg mb-4">
-                                                <Text className="text-red-500 font-bold">
-                                                    Preencha todos os campos obrigatórios:
-                                                </Text>
-                                                {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
-                                                {!accordion.description && <Text>- Descrição</Text>}
-                                                {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
-                                                {!accordion.receiptUri && <Text>- Recibo</Text>}
-                                            </View>
-                        )}  
+                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.receiptUri) && (
+                        <View className="bg-red-100 p-3 rounded-lg mb-4">
+                            <Text className="text-red-500 font-bold">
+                                Preencha todos os campos obrigatórios:
+                            </Text>
+                            {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
+                            {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
+                            {!accordion.receiptUri && <Text>- Recibo</Text>}
+                        </View>
+                    )}  
 
                     {(accordion.isSaved) && (
                         <View className="bg-green-100 p-3 rounded-lg mb-4">
@@ -358,18 +357,9 @@ const RefundRequestScreen = () => {
                         ? 'bg-gray-300'
                         : 'bg-blue-500'
                 }`}
-                onPress={async () => {
-                    if (isFirstAction) {
-                        startRefund();
-                        setIsFirstAction(false);
-                        addAccordion();
-                    } else {
-                        addAccordion();
-                    }
-                }}
+                onPress={createNewRefund}
                 disabled={
-                    !isFirstAction &&
-                    expandedAccordionId !== null && isAccordionComplete
+                    accordions.some((accordion) => accordion.isSaved == false)
                 }
             >
                 <Text

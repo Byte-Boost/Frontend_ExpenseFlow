@@ -5,6 +5,9 @@ import * as SecureStore from 'expo-secure-store';
 import { useRouter } from "expo-router";
 import Feather from "react-native-vector-icons/Feather";
 import { useAlert } from "@/hooks/useAlert";
+import UserService from "@/services/userService";
+
+const _userService = new UserService();
 
 export default function Index() {
   const [email, setEmail] = useState('');
@@ -50,10 +53,15 @@ export default function Index() {
       setEmailError('Por favor inserir um e-mail válido');
       return;
     }
-
-    console.log('Login attempt:', email, password);
-    await SecureStore.setItemAsync('userLoggedIn', 'true');
-    router.push('/home');
+    let response = await _userService.login(email, password);
+    if (response.token === undefined) {
+      showAlert("Oops!", response.error, "error");
+      return;
+    } else {
+      await SecureStore.setItemAsync('bearerToken', response.token);
+      await SecureStore.setItemAsync('userLoggedIn', 'true');
+      router.push('/home');
+    }
   };
 
   return (
