@@ -35,13 +35,16 @@ const RefundRequestScreen = () => {
     const limit = 1000
     const [isFirstAction, setIsFirstAction] = useState(true);
 
-    const isSubmitDisabled =
-        isFirstAction ||
-        expandedAccordionId !== null &&
-        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
+    const isAccordionComplete = (
+        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
         accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri);
+        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri
+    );
+
+    const isSubmitDisabled =
+        isFirstAction ||
+        expandedAccordionId !== null && isAccordionComplete;
 
     const addAccordion = () => {
         const newAccordion: Accordion = {
@@ -277,11 +280,7 @@ const RefundRequestScreen = () => {
             {/* Add Accordion */}
             <TouchableOpacity
                 className={`w-full p-3 mb-10 rounded-lg ${
-                    expandedAccordionId !== null &&
-                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                    expandedAccordionId !== null && isAccordionComplete
                         ? 'bg-gray-300'
                         : 'bg-blue-500'
                 }`}
@@ -296,20 +295,12 @@ const RefundRequestScreen = () => {
                 }}
                 disabled={
                     !isFirstAction &&
-                    expandedAccordionId !== null &&
-                    (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                    accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                    !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                    expandedAccordionId !== null && isAccordionComplete
                 }
             >
                 <Text
                     className={`text-center font-bold ${
-                        expandedAccordionId !== null &&
-                        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                        expandedAccordionId !== null && isAccordionComplete
                             ? 'text-gray-500'
                             : 'text-white'
                     }`}
@@ -331,11 +322,7 @@ const RefundRequestScreen = () => {
             >
                 <Text 
                     className={`text-center font-bold ${
-                        expandedAccordionId !== null &&
-                        (!accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.description ||
-                        accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue <= 0 ||
-                        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri)
+                        expandedAccordionId !== null && isAccordionComplete
                             ? 'text-gray-500'
                             : 'text-white'
                         }`
