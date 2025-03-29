@@ -50,7 +50,8 @@ const RefundRequestScreen = () => {
 
     const isSubmitDisabled =
         isFirstAction ||
-        expandedAccordionId !== null && isAccordionComplete;
+        expandedAccordionId !== null && isAccordionComplete ||
+        !accordions.some((accordion) => accordion.isSaved);
 
     const addAccordion = () => {
         const newAccordion: Accordion = {
@@ -143,6 +144,7 @@ const RefundRequestScreen = () => {
 
     //Fix handle submit
     const handleSubmit = async () => {
+        /*
         if(refundType && amount && receiptUri) {
             if(isOffLimit) {
                 if(description) {
@@ -165,7 +167,11 @@ const RefundRequestScreen = () => {
             }
         } else {
             Alert.alert("Aviso", "Os seguintes campos são obrigatórios: \n\n - Tipo de Reembolso\n - Valor \n - Recibo")
-        }
+        }*/
+        //send code to back
+        setAccordions([]);
+        setExpandedAccordionId(null);
+        setIsFirstAction(true);
     };
 
     return (
@@ -306,7 +312,7 @@ const RefundRequestScreen = () => {
                     {/* Save Accordion | Send to Back  */}
                     <TouchableOpacity
                         className={`w-full p-3 mb-10 rounded-lg ${
-                            accordion.isSaved
+                            accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.receiptUri)
                                 ? 'bg-gray-300'
                                 : 'bg-green-500'
                         }`}
