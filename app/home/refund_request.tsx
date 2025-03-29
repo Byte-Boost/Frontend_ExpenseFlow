@@ -8,9 +8,10 @@ import Refund from '@/services/routes/refund';
 
 import { Avatar, Icon, ListItem } from '@rneui/themed';
 
-//when an expense is closed or another expense is opened, the closed expense is sent to the backend 
-//the place to insert the code is commented
-//the handleSubmit for submitting the refund has not been changed yet
+//press "começar rembolso" to send a request to the backend to initiate the refund process
+//you can add as many expenses as needed. Each accordion represents an expense, and saving an expense sends its data to the backend
+//you can submit the refund request (The code to handle this submission is not implemented yet)
+//the place to insert the backend code is commented
 
 const refund = new Refund()
 
@@ -20,6 +21,7 @@ interface Accordion {
     description: string;
     receiptUri: string | null;
     totalValue: number;
+    isSaved: false;
 }
 
 const RefundRequestScreen = () => {
@@ -42,6 +44,10 @@ const RefundRequestScreen = () => {
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri
     );
 
+    const startRefund = async () => {
+        // Send code to backend to start the refund process
+    };
+
     const isSubmitDisabled =
         isFirstAction ||
         expandedAccordionId !== null && isAccordionComplete;
@@ -53,6 +59,7 @@ const RefundRequestScreen = () => {
             description: '',
             receiptUri: null,
             totalValue: 0,
+            isSaved: false,
         };
         setAccordions([...accordions, newAccordion]);
         setExpandedAccordionId(newAccordion.id);
@@ -82,8 +89,6 @@ const RefundRequestScreen = () => {
                 }
             }
         }
-        //send info to back
-        //code go here
         setExpandedAccordionId(expandedAccordionId === id ? null : id);
     };
 
@@ -93,6 +98,23 @@ const RefundRequestScreen = () => {
                 accordion.id === id ? { ...accordion, [field]: value } : accordion
             )
         );
+    };
+
+    const saveAccordion = async (id: number) => {
+        const accordion = accordions.find((accordion) => accordion.id === id);
+        if (!accordion) {
+            Alert.alert("Erro", "Accordion não encontrado.");
+            return;
+        }
+
+        const { refundType, description, totalValue, receiptUri } = accordion;
+
+        if (!refundType || !description || totalValue <= 0 || !receiptUri) {
+            Alert.alert("Aviso", "Preencha todos os campos obrigatórios antes de salvar.");
+            return;
+        }
+        // Send the accordion data to the backend or perform any other action here
+        updateAccordion(id, 'isSaved', true);
     };
 
     const handleImageUpload = async (id: number) => {
@@ -178,13 +200,24 @@ const RefundRequestScreen = () => {
                                                 {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
                                                 {!accordion.receiptUri && <Text>- Recibo</Text>}
                                             </View>
-                        )}                     
+                        )}  
+
+                    {(accordion.isSaved) && (
+                        <View className="bg-green-100 p-3 rounded-lg mb-4">
+                            <Text className="text-green-500 font-bold">Despesa Salva com Sucesso!</Text>
+                        </View>
+                            )}                   
 
                     {/*Change Type*/}
                     <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
                     <View className="flex-row justify-between mb-4">
                         <TouchableOpacity
-                            onPress={() => updateAccordion(accordion.id, 'refundType', 'value')}
+                            onPress={() => {
+                                if (accordion.isSaved) {
+                                    return;
+                                }
+                                updateAccordion(accordion.id, 'refundType', 'value');
+                            }}
                             className={`flex-1 flex-row items-center p-2 rounded-lg border mr-2 ${
                                 accordion.refundType === 'value' ? 'border-blue-500' : 'border-gray-300'
                             }`}
@@ -195,7 +228,12 @@ const RefundRequestScreen = () => {
                             </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            onPress={() => updateAccordion(accordion.id, 'refundType', 'quantity')}
+                            onPress={() => {
+                                if (accordion.isSaved) {
+                                    return;
+                                }
+                                updateAccordion(accordion.id, 'refundType', 'quantity')
+                            }}
                             className={`flex-1 flex-row items-center p-2 rounded-lg border ml-2 ${
                                 accordion.refundType === 'quantity' ? 'border-blue-500' : 'border-gray-300'
                             }`}
@@ -216,6 +254,7 @@ const RefundRequestScreen = () => {
                             placeholder="Descreva a razão da despesa"
                             multiline
                             className="ml-2 w-full h-24 text-left"
+                            editable={!accordion.isSaved}
                         />
                     </View>
 
@@ -229,6 +268,7 @@ const RefundRequestScreen = () => {
                             placeholder="Insira o Valor da Despesa"
                             keyboardType="numeric"
                             style={{ marginLeft: 10, flex: 1 }}
+                            editable={!accordion.isSaved}
                         />
                         {accordion.refundType === 'quantity' && (
                             <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
@@ -263,15 +303,43 @@ const RefundRequestScreen = () => {
                             <Text className="text-4xl font-bold ">{formatCurrency(accordion.totalValue)}</Text>
                         </View>
 
-
-
+                    {/* Save Accordion | Send to Back  */}
+                    <TouchableOpacity
+                        className={`w-full p-3 mb-10 rounded-lg ${
+                            accordion.isSaved
+                                ? 'bg-gray-300'
+                                : 'bg-green-500'
+                        }`}
+                        onPress={() => saveAccordion(accordion.id)}
+                        disabled={accordion.isSaved}
+                    >
+                        <Text
+                            className={`text-center font-bold ${
+                                accordion.isSaved
+                                    ? 'text-gray-500'
+                                    : 'text-white'
+                            }`}
+                        >Salvar Despesa</Text>
+                    </TouchableOpacity>
+                    
 
                     {/* Delete Accordion */}
                     <TouchableOpacity
-                        className="bg-red-500 mb-10 p-2 rounded-lg mt-4"
+                        className={`w-full p-3 mb-10 rounded-lg ${
+                            accordion.isSaved
+                                ? 'bg-gray-300'
+                                : 'bg-red-500'
+                        }`}
                         onPress={() => deleteAccordion(accordion.id)}
+                        disabled={accordion.isSaved}
                     >
-                        <Text className="text-white text-center font-bold">Deletar Despesa</Text>
+                        <Text 
+                            className={`text-center font-bold ${
+                                accordion.isSaved
+                                    ? 'text-gray-500'
+                                    : 'text-white'
+                            }`}
+                        >Deletar Despesa</Text>
                     </TouchableOpacity>
                 
                 </ListItem.Accordion>
@@ -286,11 +354,11 @@ const RefundRequestScreen = () => {
                 }`}
                 onPress={async () => {
                     if (isFirstAction) {
-                        // Envia o código para o backend
-                        setIsFirstAction(false); // Muda o estado para o modo "Adicionar Despesa"
+                        startRefund();
+                        setIsFirstAction(false);
                         addAccordion();
                     } else {
-                        addAccordion(); // Adiciona uma nova despesa
+                        addAccordion();
                     }
                 }}
                 disabled={
