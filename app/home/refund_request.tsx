@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Image, Alert, ScrollView  } fr
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { formatCurrency } from '@/utils/formmatters';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 import { ListItem } from '@rneui/themed';
 import RefundService from '@/services/refundService';
@@ -14,7 +15,7 @@ interface Accordion {
     id: number;
     refundType: string;
     description: string;
-    receiptUri: string | null;
+    attachment: string | null;
     totalValue: number;
     isSaved: false;
 }
@@ -23,9 +24,8 @@ const RefundRequestScreen = () => {
     const [refund, setRefund] = useState<Refund | null>(null);
     const createNewRefund = async ()=>{
         if (isFirstAction) {
-            let id = await _refundService.createRefund();
-            console.log("d")
-            setRefund(new Refund(id));
+            let res = await _refundService.createRefund();
+            setRefund(new Refund(res.refundId));
             setIsFirstAction(false);
         }                         
         addAccordion();
@@ -36,7 +36,7 @@ const RefundRequestScreen = () => {
     const [refundType, setRefundType] = useState('');
     const [description, setDescription] = useState('');
     const [amount, setAmount] = useState('');
-    const [receiptUri, setReceiptUri] = useState<string | null>(null);
+    const [attachment, setattachment] = useState<string | null>(null);
     const [isOffLimit, setIsOffLimit] = useState(false);
     const [quantityMult, setQuantityMult] = useState(10);
     const limit = 1000
@@ -45,7 +45,7 @@ const RefundRequestScreen = () => {
     const isAccordionComplete = (
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
         !(accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue ?? 0 <= 0) ||
-        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.receiptUri
+        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.attachment
     );
 
     const isSubmitDisabled =
@@ -58,7 +58,7 @@ const RefundRequestScreen = () => {
             id: accordions.length + 1,
             refundType: '',
             description: '',
-            receiptUri: null,
+            attachment: null,
             totalValue: 0,
             isSaved: false,
         };
@@ -80,8 +80,8 @@ const RefundRequestScreen = () => {
         const currentAccordion = accordions.find((accordion) => accordion.id === expandedAccordionId);
         if (expandedAccordionId !== null) {
             if (currentAccordion) {
-                const { refundType, totalValue, receiptUri } = currentAccordion;
-                if (!refundType || totalValue <= 0 || !receiptUri) {
+                const { refundType, totalValue, attachment } = currentAccordion;
+                if (!refundType || totalValue <= 0 || !attachment) {
                     Alert.alert(
                         "Aviso",
                         "Preencha todos os campos antes de abrir outra Despesa"
@@ -108,14 +108,27 @@ const RefundRequestScreen = () => {
             return;
         }
 
-        const { refundType, totalValue, receiptUri } = accordion;
+        const { refundType, totalValue, attachment } = accordion;
 
-        if (!refundType || totalValue <= 0 || !receiptUri) {
+        if (refund == null || !refundType || totalValue <= 0 || !attachment) {
             Alert.alert("Aviso", "Preencha todos os campos obrigatórios antes de salvar.");
             return;
         }
-        // Send the accordion data to the backend or perform any other action here
-        updateAccordion(id, 'isSaved', true);
+        try {
+             let base64attachment = await FileSystem.readAsStringAsync(attachment, { encoding: FileSystem.EncodingType.Base64 });
+            let expenseId = await _refundService.createExpense(
+                refund.id,
+                refundType, 
+                totalValue,
+                accordion.description, 
+                base64attachment
+            );
+            updateAccordion(id, 'isSaved', true);
+            updateAccordion(id, 'expenseId', expenseId);
+        } catch (err){
+            console.log(err);
+            Alert.alert("Erro", "Erro ao salvar a despesa.");
+        }
     };
 
     const handleImageUpload = async (id: number) => {
@@ -134,44 +147,24 @@ const RefundRequestScreen = () => {
         });
 
         if (!result.canceled) {
-            updateAccordion(id, 'receiptUri', result.assets[0].uri); // Updates the specific accordion's receiptUri
+            updateAccordion(id, 'attachment', result.assets[0].uri); // Updates the specific accordion's attachment
         }
     };
 
     const removeImage = () => {
-        setReceiptUri(null)
+        setattachment(null)
     }
 
-    //Fix handle submit
     const handleSubmit = async () => {
-        /*
-        if(refundType && amount && receiptUri) {
-            if(isOffLimit) {
-                if(description) {
-                    await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
-                    Alert.alert("Sucesso", `Pedido de reembolso bem sucedido, excedendo o limite máximo de ${limit}.`);
-                    setAmount("");
-                    setDescription("");
-                    setRefundType("");
-                    setReceiptUri(null);
-                } else {
-                    Alert.alert("Aviso", "Você excedeu o limite máximo, portanto a descrição é obrigatória");
-                }
-            } else {
-                await refund.postRefund(1, refundType, parseFloat(amount), receiptUri.toString(), description)
-                Alert.alert("Sucesso", `Pedido de reembolso bem sucedido!`);
-                setAmount("");
-                setDescription("");
-                setRefundType("");
-                setReceiptUri(null);
-            }
-        } else {
-            Alert.alert("Aviso", "Os seguintes campos são obrigatórios: \n\n - Tipo de Reembolso\n - Valor \n - Recibo")
-        }*/
-        //send code to back
-        setAccordions([]);
-        setExpandedAccordionId(null);
-        setIsFirstAction(true);
+        if (isFirstAction || refund == null) {
+            Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
+            return;
+        }
+        await _refundService.closeRefund(refund.id).then(()=>{
+            setAccordions([]);
+            setExpandedAccordionId(null);
+            setIsFirstAction(true);
+        });
     };
 
     return (
@@ -196,14 +189,14 @@ const RefundRequestScreen = () => {
 
                     {/* Conteúdo do Accordion */}
 
-                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.receiptUri) && (
+                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment) && (
                         <View className="bg-red-100 p-3 rounded-lg mb-4">
                             <Text className="text-red-500 font-bold">
                                 Preencha todos os campos obrigatórios:
                             </Text>
                             {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
                             {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
-                            {!accordion.receiptUri && <Text>- Recibo</Text>}
+                            {!accordion.attachment && <Text>- Recibo</Text>}
                         </View>
                     )}  
 
@@ -292,12 +285,12 @@ const RefundRequestScreen = () => {
                         <Text className="text-white ml-2">Adicionar Recibo</Text>
                     </TouchableOpacity>
 
-                    {accordion.receiptUri && (
+                    {accordion.attachment && (
                         <View className="mb-6">
                             <Text className="text-lg mb-2">Imagem recebida</Text>
                             <MaterialIcons name={refundType == 'value' ?  'close' : 'close'} size={20} color="#FF0000" onPress={removeImage}/>
                             <Image
-                                source={{ uri: accordion.receiptUri || undefined }}
+                                source={{ uri: accordion.attachment || undefined }}
                                 style={{ width: 150, height: 150, borderRadius: 8 }}
                             />
                         </View>
@@ -311,7 +304,7 @@ const RefundRequestScreen = () => {
                     {/* Save Accordion | Send to Back  */}
                     <TouchableOpacity
                         className={`w-full p-3 mb-10 rounded-lg ${
-                            accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.receiptUri)
+                            accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
                                 ? 'bg-gray-300'
                                 : 'bg-green-500'
                         }`}
