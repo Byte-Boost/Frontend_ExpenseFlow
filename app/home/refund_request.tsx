@@ -39,7 +39,7 @@ const RefundRequestScreen = () => {
     const limit = 1000
     const [isFirstAction, setIsFirstAction] = useState(true);
 
-    const isAccordionComplete = (
+    const accordionIsInvalid = (
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
         !(accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue ?? 0 <= 0) ||
         !accordions.find((accordion) => accordion.id === expandedAccordionId)?.attachment
@@ -47,7 +47,7 @@ const RefundRequestScreen = () => {
 
     const isSubmitDisabled =
         isFirstAction ||
-        expandedAccordionId !== null && isAccordionComplete ||
+        expandedAccordionId !== null && accordionIsInvalid ||
         accordions.some((accordion) => accordion.isSaved == false);
 
     const addAccordion = () => {
@@ -186,7 +186,7 @@ const RefundRequestScreen = () => {
 
                     {/* Conteúdo do Accordion */}
 
-                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment) && (
+                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment || (!accordion.description && accordion.totalValue > limit )) && (
                         <View className="bg-red-100 p-3 rounded-lg mb-4">
                             <Text className="text-red-500 font-bold">
                                 Preencha todos os campos obrigatórios:
@@ -301,16 +301,16 @@ const RefundRequestScreen = () => {
                     {/* Save Accordion | Send to Back  */}
                     <TouchableOpacity
                         className={`w-full p-3 mb-10 rounded-lg ${
-                            accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
+                            accordion.isSaved || (!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment || (!accordion.description && accordion.totalValue > limit ))
                                 ? 'bg-gray-300'
                                 : 'bg-green-500'
                         }`}
                         onPress={() => saveAccordion(accordion.id)}
-                        disabled={accordion.isSaved}
+                        disabled={accordion.isSaved || (!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment || (!accordion.description && accordion.totalValue > limit ))}
                     >
                         <Text
                             className={`text-center font-bold ${
-                                accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
+                                accordion.isSaved || (!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment || (!accordion.description && accordion.totalValue > limit ))
                                     ? 'text-gray-500'
                                     : 'text-white'
                             }`}
@@ -343,7 +343,7 @@ const RefundRequestScreen = () => {
             {/* Add Accordion */}
             <TouchableOpacity
                 className={`w-full p-3 mb-10 rounded-lg ${
-                    expandedAccordionId !== null && isAccordionComplete
+                    expandedAccordionId !== null && accordionIsInvalid
                         ? 'bg-gray-300'
                         : 'bg-blue-500'
                 }`}
@@ -354,7 +354,7 @@ const RefundRequestScreen = () => {
             >
                 <Text
                     className={`text-center font-bold ${
-                        expandedAccordionId !== null && isAccordionComplete
+                        expandedAccordionId !== null && accordionIsInvalid
                             ? 'text-gray-500'
                             : 'text-white'
                     }`}
@@ -376,7 +376,7 @@ const RefundRequestScreen = () => {
             >
                 <Text 
                     className={`text-center font-bold ${
-                        expandedAccordionId !== null && isAccordionComplete
+                        isSubmitDisabled
                             ? 'text-gray-500'
                             : 'text-white'
                         }`
