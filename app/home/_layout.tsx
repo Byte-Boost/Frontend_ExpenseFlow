@@ -46,7 +46,7 @@ export default function RootLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
       <Tabs.Screen name="refund_list" options={{ title: "Lista" }} />
-      <Tabs.Screen name="refund_request" options={{ title: "Pedir Reembolso" }} />
+      <Tabs.Screen name="refund_request" options={{ title: "Reembolso" }} />
       <Tabs.Screen name="account_settings" options={{ title: "Conta" }} />
     </Tabs>
   );

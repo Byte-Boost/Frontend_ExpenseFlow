@@ -34,10 +34,8 @@ const RefundRequestScreen = () => {
     const [accordions, setAccordions] = useState<Accordion[]>([]);
     const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
     const [refundType, setRefundType] = useState('');
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
     const [attachment, setattachment] = useState<string | null>(null);
-    const [isOffLimit, setIsOffLimit] = useState(false);
+   
     const [quantityMult, setQuantityMult] = useState(10);
     const limit = 1000
     const [isFirstAction, setIsFirstAction] = useState(true);
@@ -108,9 +106,9 @@ const RefundRequestScreen = () => {
             return;
         }
 
-        const { refundType, totalValue, attachment } = accordion;
+        const { refundType, totalValue, attachment , description} = accordion;
 
-        if (refund == null || !refundType || totalValue <= 0 || !attachment) {
+        if (refund == null || !refundType || totalValue <= 0 || !attachment || (totalValue > limit && !description)) {
             Alert.alert("Aviso", "Preencha todos os campos obrigatórios antes de salvar.");
             return;
         }
@@ -119,7 +117,7 @@ const RefundRequestScreen = () => {
             let expenseId = await _refundService.createExpense(
                 refund.id,
                 refundType, 
-                totalValue,
+                (totalValue * (accordion.refundType === 'quantity' ? quantityMult : 1)),
                 accordion.description, 
                 base64attachment
             );
@@ -195,7 +193,8 @@ const RefundRequestScreen = () => {
                                 Preencha todos os campos obrigatórios:
                             </Text>
                             {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
-                            {accordion.totalValue <= 0 && <Text>- Valor Total</Text>}
+                            {accordion.totalValue <= 0 && <Text>- Valor </Text>}
+                            {(!accordion.description && accordion.totalValue > limit )&& <Text>- Descrição</Text>}
                             {!accordion.attachment && <Text>- Recibo</Text>}
                         </View>
                     )}  
@@ -257,7 +256,7 @@ const RefundRequestScreen = () => {
                     </View>
 
                     <Text className="mb-2 text-lg font-bold">Valor</Text>
-                        {isOffLimit ? <Text className="text-lg pb-2 font-bold text-[#ff4a11]"> Você está acima do limite de {limit} </Text> : <></>}
+                        {accordion.totalValue > limit ? <Text className="text-md pb-2 font-bold text-[#e3be22]">  Você está acima do limite de {limit}</Text> : null}
                     <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 8, borderColor: '#ccc', marginBottom: 20 }}>
                         <MaterialIcons name={accordion.refundType == 'value' ?  'attach-money' : 'add-box'} size={20} color="#6B7280" />
                         <TextInput
@@ -298,7 +297,7 @@ const RefundRequestScreen = () => {
 
                         <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
                             <Text className="text-sm font-bold text-[#6B7280] pb-2">VALOR TOTAL</Text>
-                            <Text className="text-4xl font-bold ">{formatCurrency(accordion.totalValue)}</Text>
+                            <Text className="text-4xl font-bold ">{formatCurrency(accordion.totalValue * (accordion.refundType === 'quantity' ? quantityMult: 1 ))}</Text>
                         </View>
 
                     {/* Save Accordion | Send to Back  */}
@@ -313,7 +312,7 @@ const RefundRequestScreen = () => {
                     >
                         <Text
                             className={`text-center font-bold ${
-                                accordion.isSaved
+                                accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
                                     ? 'text-gray-500'
                                     : 'text-white'
                             }`}
@@ -322,7 +321,7 @@ const RefundRequestScreen = () => {
                     
 
                     {/* Delete Accordion */}
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         className={`w-full p-3 mb-10 rounded-lg ${
                             accordion.isSaved
                                 ? 'bg-gray-300'
@@ -338,7 +337,7 @@ const RefundRequestScreen = () => {
                                     : 'text-white'
                             }`}
                         >Deletar Despesa</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                 
                 </ListItem.Accordion>
             ))}
