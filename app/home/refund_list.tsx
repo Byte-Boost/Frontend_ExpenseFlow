@@ -2,14 +2,16 @@
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
-
+import RefundService from "@/services/refundService";
+import { formatCurrency } from '@/utils/formmatters';
+const _refundService = new RefundService();
 
 export default function RefundList() {
     const currentDate = new Date();
 
     const [displayMonth, setDisplayMonth] = useState(currentDate.getMonth() + 1);
     const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
-    const [refunds, setRefunds] = useState([]);
+    const [refunds, setRefunds] = useState<any[]>([]);
 
     if (displayMonth < 1) {
         setDisplayMonth(12);
@@ -19,6 +21,7 @@ export default function RefundList() {
         setDisplayYear(displayYear + 1);
     }
     
+
     /*
     const refunds = [
         { id: '1', name: 'Refund 1', amount: 100, date: '2025-09-01', status: 'pending' },
@@ -38,12 +41,10 @@ export default function RefundList() {
     useEffect(() => {
         const fetchRefunds = async () => {
             try {
-                const response = await fetch(`http://localhost:3200/refunds?periodStart=${displayYear}-${displayMonth.toString().padStart(2, '0')}-01&periodEnd=${displayYear}-${displayMonth.toString().padStart(2, '0')}-31`);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
-                setRefunds(data);
+                const response = await _refundService.getRefunds(displayMonth.toString(), displayYear.toString());
+                console.log("Refunds:", response);
+
+                setRefunds(response);
             } catch (error) {
                 console.error("Error fetching refunds:", error);
             }
@@ -57,12 +58,31 @@ export default function RefundList() {
         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
     ];
 
-    const renderItem = ({ item }) => (
-        <TouchableOpacity className="p-4 bg-white mb-2 rounded shadow" onPress={() => router.push(`/refund/${item.id}`)}>
-            <Text className="text-gray-600">Data: {item.date}</Text>
-            <Text className="text-lg font-semibold">{item.name}</Text>
-            <Text className="text-gray-600">Quantidade: ${item.amount}</Text>
-            <Text className="text-gray-600">Status: {item.status}</Text>
+    const colors = {
+        'in-process': 'text-cyan-500',
+        'rejected': 'text-red-500',
+        'approved': 'text-green-500',
+    };
+
+    //FIX THIS TO USE RIGHT STUFF
+    const translation ={
+        'in-process': 'Em processamento',
+        'rejected': 'Rejeitado',
+        'approved': 'Aprovado',
+    }
+
+    interface RefundItem {
+        id: string;
+        status: 'in-process' | 'rejected' | 'approved';
+        totalValue: number;
+        date: string;
+    }
+    
+    const renderItem = ({ item }: { item: RefundItem }) => (
+        <TouchableOpacity className="p-4 bg-white mb-2 rounded shadow">
+            <Text className="text-gray-600">Status: <Text className={` ${colors[item.status]}`}> {(translation[item.status]).toLocaleUpperCase()}</Text></Text>
+            <Text className="text-lg font-semibold">Quantidade: {formatCurrency(item.totalValue)}</Text>
+            <Text className="text-gray-600">Data: {(new Date(item.date)).toLocaleString()}</Text>
         </TouchableOpacity>
     );
 

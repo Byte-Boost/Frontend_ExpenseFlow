@@ -1,8 +1,8 @@
 import api from "./server";
 
 export default class RefundService {
-    public async getRefunds() {
-        const response = await api.get(`/refund`)
+    public async getRefunds(displayMonth: string = '', displayYear: string = '') {
+        const response = await api.get(`/refund?periodStart=${displayYear}-${displayMonth.toString().padStart(2, '0')}-01&periodEnd=${displayYear}-${displayMonth.toString().padStart(2, '0')}-31`)
         return response.data
     }
     

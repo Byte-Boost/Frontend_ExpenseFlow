@@ -13,7 +13,7 @@ export default function Home() {
         alignItems: "center",
       }}
     >
-      <Text>Home without anything in it for now</Text>
+      {/* <Text>Home without anything in it for now</Text> */}
     </View>
   );
 }
