@@ -34,7 +34,6 @@ const RefundRequestScreen = () => {
     const [accordions, setAccordions] = useState<Accordion[]>([]);
     const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
     const [refundType, setRefundType] = useState('');
-    const [attachment, setattachment] = useState<string | null>(null);
    
     const [quantityMult, setQuantityMult] = useState(10);
     const limit = 1000
@@ -150,7 +149,7 @@ const RefundRequestScreen = () => {
     };
 
     const removeImage = () => {
-        setattachment(null)
+        updateAccordion(expandedAccordionId!, 'attachment', null); 
     }
 
     const handleSubmit = async () => {
@@ -286,7 +285,6 @@ const RefundRequestScreen = () => {
 
                     {accordion.attachment && (
                         <View className="mb-6">
-                            <Text className="text-lg mb-2">Imagem recebida</Text>
                             <MaterialIcons name={refundType == 'value' ?  'close' : 'close'} size={20} color="#FF0000" onPress={removeImage}/>
                             <Image
                                 source={{ uri: accordion.attachment || undefined }}
