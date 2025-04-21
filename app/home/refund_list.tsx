@@ -4,6 +4,9 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
 import { formatCurrency } from '@/utils/formmatters';
+import RNPickerSelect from 'react-native-picker-select';
+import { Ionicons } from "@expo/vector-icons";
+
 const _refundService = new RefundService();
 
 export default function RefundList() {
@@ -101,11 +104,26 @@ export default function RefundList() {
                     <Text style={{ fontSize: 24 }}>{">"}</Text>
                 </TouchableOpacity>
             </View>
+            <View className="flex-row items-center border border-gray-300 rounded-lg px-3 py-2 pb-5 mb-4">
+                <Ionicons name="filter" size={20} color="black" className="mr-2" />
+                <View className="flex-1">
+                    <RNPickerSelect
+                    onValueChange={(value) => _refundService.getRefundByStatus(value)}
+                    placeholder={{ label: 'Selecione um status', value: null, color: '#9EA0A4' }}
+                    items={[
+                        { label: 'Em processo', value: 'in-process' },
+                        { label: 'Aprovado', value: 'approved' },
+                        { label: 'Rejeitado', value: 'rejected' },
+                    ]}
+                    />
+                </View>
+            </View>
             <FlatList
                 data={refunds.filter(refund => refund.date.startsWith(`${displayYear}-${displayMonth.toString().padStart(2, '0')}`))}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
             />
+
         </View>
     );
 }
