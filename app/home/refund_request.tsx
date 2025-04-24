@@ -129,24 +129,55 @@ const RefundRequestScreen = () => {
     };
 
     const handleImageUpload = async (id: number) => {
-        // Requests permission
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permissão negada', 'Você precisa permitir o acesso à galeria.');
-            return;
-        }
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-        // Open the gallery to choose a photo
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            // allowsEditing: true, // Allows image cropping
-            quality: 1, // Maximum image quality
-        });
+    if (cameraPermission.status !== 'granted' || mediaPermission.status !== 'granted') {
+        Alert.alert(
+            'Permissão necessária',
+            'Você precisa permitir o acesso à câmera e à galeria para adicionar um recibo.'
+        );
+        return;
+    }
 
-        if (!result.canceled) {
-            updateAccordion(id, 'attachment', result.assets[0].uri); // Updates the specific accordion's attachment
-        }
-    };
+    Alert.alert(
+        'Selecionar Imagem',
+        'Como você deseja adicionar o recibo?',
+        [
+            {
+                text: 'Cancelar',
+                style: 'cancel',
+            },
+            {
+                text: 'Galeria',
+                onPress: async () => {
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        quality: 1,
+                    });
+
+                    if (!result.canceled) {
+                        updateAccordion(id, 'attachment', result.assets[0].uri);
+                    }
+                },
+            },
+            {
+                text: 'Câmera',
+                onPress: async () => {
+                    const result = await ImagePicker.launchCameraAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        quality: 1,
+                    });
+
+                    if (!result.canceled) {
+                        updateAccordion(id, 'attachment', result.assets[0].uri);
+                    }
+                },
+            },
+        ]
+    );
+};
+
 
     const removeImage = () => {
         updateAccordion(expandedAccordionId!, 'attachment', null); 
