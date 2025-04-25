@@ -3,8 +3,13 @@ import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
+import ProjectService from "@/services/projectService";
 import { formatCurrency } from '@/utils/formmatters';
+import RNPickerSelect from 'react-native-picker-select';
+import { Ionicons } from "@expo/vector-icons";
+
 const _refundService = new RefundService();
+const _projectService = new ProjectService();
 
 export default function RefundList() {
     const currentDate = new Date();
@@ -12,6 +17,10 @@ export default function RefundList() {
     const [displayMonth, setDisplayMonth] = useState(currentDate.getMonth() + 1);
     const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
     const [refunds, setRefunds] = useState<any[]>([]);
+    const [items, setItems] = useState([]);
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
 
     if (displayMonth < 1) {
         setDisplayMonth(12);
@@ -52,6 +61,23 @@ export default function RefundList() {
 
         fetchRefunds();
     }, [displayMonth, displayYear]);
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+          try {
+            const projects = await _projectService.getProjects();
+            const formattedItems = projects.map((project: { name: string, id: string }) => ({
+              label: project.name,
+              value: project.id,
+            }));
+            setItems(formattedItems);
+          } catch (error) {
+            console.error('Erro ao buscar projetos:', error);
+          }
+        };
+    
+        fetchProjects();
+      }, []);
 
     const months = [
         "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -101,8 +127,67 @@ export default function RefundList() {
                     <Text style={{ fontSize: 24 }}>{">"}</Text>
                 </TouchableOpacity>
             </View>
+
+            <View className="flex-row justify-between space-x-4 mb-4">
+                <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+                    <Ionicons name="filter" size={24} color="black" style={{ marginRight: 8 }} />
+                    <View className="flex-1">
+                        <RNPickerSelect
+                            onValueChange={(value) => setSelectedStatus(value)}
+                            placeholder={{ label: 'Selecione um status', value: null, color: '#9EA0A4' }}
+                            items={[
+                            { label: 'Em processo', value: 'in-process' },
+                            { label: 'Aprovado', value: 'approved' },
+                            { label: 'Rejeitado', value: 'rejected' },
+                            ]}
+                            useNativeAndroidPickerStyle={false}
+                            style={{
+                            inputAndroid: {
+                                fontSize: 12,
+                                paddingVertical: 8,
+                                paddingHorizontal: 12,
+                                color: '#000',
+                            },
+                            placeholder: {
+                                color: '#9EA0A4',
+                                fontSize: 12,
+                            },
+                            }}
+                        />
+                    </View>
+                </View>
+
+                <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+                    <Ionicons name="filter" size={24} color="black" style={{ marginRight: 8 }} />
+                    <View className="flex-1">
+                        <RNPickerSelect
+                            onValueChange={(value) => setSelectedProject(value)}
+                            placeholder={{ label: 'Selecione um projeto', value: null, color: '#9EA0A4' }}
+                            items={items}
+                            useNativeAndroidPickerStyle={false}
+                            style={{
+                            inputAndroid: {
+                                fontSize: 12,
+                                paddingVertical: 8,
+                                paddingHorizontal: 12,
+                                color: '#000',
+                            },
+                            placeholder: {
+                                color: '#9EA0A4',
+                                fontSize: 12,
+                            },
+                            }}
+                        />
+                    </View>
+                </View>
+            </View>
+
             <FlatList
-                data={refunds.filter(refund => refund.date.startsWith(`${displayYear}-${displayMonth.toString().padStart(2, '0')}`))}
+                data={refunds
+                    .filter(refund => refund.date.startsWith(`${displayYear}-${displayMonth.toString().padStart(2, '0')}`))
+                    .filter(refund => !selectedStatus || refund.status === selectedStatus)
+                    .filter(refund => !selectedProject || refund.projectId === selectedProject)
+                }
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
             />

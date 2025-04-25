@@ -20,6 +20,11 @@ export default class RefundService {
             return null;
         }
     }
+
+    public async getRefundByStatus(status: string) {
+        const response = await api.get(`/refund/${status}`)
+        return response.data
+    }
     
     public async closeRefund(id: number){
         return await api.patch(`/refund/${id}/close`);
