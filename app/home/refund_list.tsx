@@ -18,6 +18,9 @@ export default function RefundList() {
     const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
     const [refunds, setRefunds] = useState<any[]>([]);
     const [items, setItems] = useState([]);
+    const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+    const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
 
     if (displayMonth < 1) {
         setDisplayMonth(12);
@@ -62,7 +65,7 @@ export default function RefundList() {
     useEffect(() => {
         const fetchProjects = async () => {
           try {
-            const projects = await _projectService.getProjectByUser('joao');
+            const projects = await _projectService.getProjects();
             const formattedItems = projects.map((project: { name: string, id: string }) => ({
               label: project.name,
               value: project.id,
@@ -130,7 +133,7 @@ export default function RefundList() {
                     <Ionicons name="filter" size={24} color="black" style={{ marginRight: 8 }} />
                     <View className="flex-1">
                         <RNPickerSelect
-                            onValueChange={(value) => _refundService.getRefundByStatus(value)}
+                            onValueChange={(value) => setSelectedStatus(value)}
                             placeholder={{ label: 'Selecione um status', value: null, color: '#9EA0A4' }}
                             items={[
                             { label: 'Em processo', value: 'in-process' },
@@ -158,7 +161,7 @@ export default function RefundList() {
                     <Ionicons name="filter" size={24} color="black" style={{ marginRight: 8 }} />
                     <View className="flex-1">
                         <RNPickerSelect
-                            onValueChange={(value) => _refundService.getRefundByStatus(value)}
+                            onValueChange={(value) => setSelectedProject(value)}
                             placeholder={{ label: 'Selecione um projeto', value: null, color: '#9EA0A4' }}
                             items={items}
                             useNativeAndroidPickerStyle={false}
@@ -180,11 +183,14 @@ export default function RefundList() {
             </View>
 
             <FlatList
-                data={refunds.filter(refund => refund.date.startsWith(`${displayYear}-${displayMonth.toString().padStart(2, '0')}`))}
+                data={refunds
+                    .filter(refund => refund.date.startsWith(`${displayYear}-${displayMonth.toString().padStart(2, '0')}`))
+                    .filter(refund => !selectedStatus || refund.status === selectedStatus)
+                    .filter(refund => !selectedProject || refund.projectId === selectedProject)
+                }
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
             />
-
         </View>
     );
 }

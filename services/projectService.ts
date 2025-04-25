@@ -2,8 +2,8 @@ import api from "./server";
 
 export default class ProjectService {
     // NEED TEST
-    public async getProjectByUser(user: string) {
-        const response = await api.get(`/project/${user}`)
+    public async getProjects() {
+        const response = await api.get(`/project/`)
         return response.data
     }
     

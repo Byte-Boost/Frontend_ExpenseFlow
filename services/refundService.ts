@@ -23,7 +23,6 @@ export default class RefundService {
 
     public async getRefundByStatus(status: string) {
         const response = await api.get(`/refund/${status}`)
-        console.log(status)
         return response.data
     }
     
