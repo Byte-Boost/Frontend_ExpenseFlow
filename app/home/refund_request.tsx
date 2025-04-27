@@ -22,7 +22,33 @@ interface Accordion {
 
 const RefundRequestScreen = () => {
     const [refund, setRefund] = useState<Refund | null>(null);
-    const createNewRefund = async ()=>{
+    const [accordions, setAccordions] = useState<Accordion[]>([]);
+    const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
+    const [isFirstAction, setIsFirstAction] = useState(true);
+
+    const limit = 1000
+    const [quantityMult, setQuantityMult] = useState(10);
+
+    const isAccordionComplete = (accordionId: number | null): boolean => {
+        if (accordionId === null) return true; // No accordion is expanded, so technically complete for adding new
+        const accordion = accordions.find((acc) => acc.id === accordionId);
+        if (!accordion) return true; // Should not happen
+        return (
+            !!accordion.refundType &&
+            accordion.totalValue > 0 &&
+            !!accordion.attachment &&
+            (accordion.totalValue <= limit || !!accordion.description) // Description required only if over limit
+        );
+    };
+
+    const isAnyAccordionUnsaved = accordions.some((accordion) => !accordion.isSaved);
+    const isCurrentAccordionIncomplete = expandedAccordionId !== null && !isAccordionComplete(expandedAccordionId);
+
+    const isAddExpenseDisabled = isAnyAccordionUnsaved || isCurrentAccordionIncomplete;
+    const isSubmitDisabled = isFirstAction || isAnyAccordionUnsaved || isCurrentAccordionIncomplete;
+    const isCancelDisabled = isFirstAction; // Disable cancel if no refund has been started
+
+    const createNewRefund = async ()=> {
         if (isFirstAction) {
             let res = await _refundService.createRefund();
             setRefund(new Refund(res.refundId));
@@ -30,25 +56,6 @@ const RefundRequestScreen = () => {
         }                         
         addAccordion();
     }
-
-    const [accordions, setAccordions] = useState<Accordion[]>([]);
-    const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(null);
-    const [refundType, setRefundType] = useState('');
-   
-    const [quantityMult, setQuantityMult] = useState(10);
-    const limit = 1000
-    const [isFirstAction, setIsFirstAction] = useState(true);
-
-    const isAccordionComplete = (
-        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.refundType ||
-        !(accordions.find((accordion) => accordion.id === expandedAccordionId)?.totalValue ?? 0 <= 0) ||
-        !accordions.find((accordion) => accordion.id === expandedAccordionId)?.attachment
-    );
-
-    const isSubmitDisabled =
-        isFirstAction ||
-        expandedAccordionId !== null && isAccordionComplete ||
-        accordions.some((accordion) => accordion.isSaved == false);
 
     const addAccordion = () => {
         const newAccordion: Accordion = {
@@ -195,6 +202,54 @@ const RefundRequestScreen = () => {
         });
     };
 
+    const resetState = () => {
+        setAccordions([]);
+        setExpandedAccordionId(null);
+        setIsFirstAction(true);
+        setRefund(null);
+        // Reset any other relevant state if needed
+    };
+
+    const handleCancel = () => {
+        if (!refund || !refund.id) {
+            // Should not happen if button is correctly disabled, but good practice
+            resetState(); // Reset state even if refund ID is missing
+            return;
+        }
+
+        Alert.alert(
+            "Confirmar Cancelamento",
+            "Tem certeza que deseja cancelar este pedido de reembolso? Todas as despesas não salvas serão perdidas.",
+            [
+                {
+                    text: "Não",
+                    style: "cancel",
+                },
+                {
+                    text: "Sim",
+                    onPress: async () => {
+                        try {
+                            await _refundService.deleteRefund(refund.id);
+                            resetState();
+                            Alert.alert("Cancelado", "Pedido de reembolso cancelado com sucesso.");
+                        } catch (error: any) {
+                            console.error("Failed to delete refund:", error);
+                            // Handle specific errors if needed, e.g., based on status code
+                            if (error.response && error.response.status === 403) {
+                                Alert.alert("Erro", "Não é possível cancelar um reembolso que já foi processado.");
+                                // Optionally reset state even on error, depending on desired UX
+                                // resetState();
+                            } else {
+                                Alert.alert("Erro", "Não foi possível cancelar o pedido de reembolso. Tente novamente.");
+                            }
+                        }
+                    },
+                    style: "destructive", // iOS style for destructive actions
+                },
+            ]
+        );
+    };
+
     return (
         <ScrollView className="p-5 bg-gray-50 h-full">
 
@@ -209,34 +264,53 @@ const RefundRequestScreen = () => {
                             <ListItem.Content>
                                 <ListItem.Title>Despesa {accordion.id}</ListItem.Title>
                             </ListItem.Content>
+                            {/* Add a visual indicator if saved */}
+                            {accordion.isSaved && <Ionicons name="checkmark-circle" size={24} color="green" style={{ marginLeft: 10 }} />}
                         </>
                     }
                     isExpanded={expandedAccordionId === accordion.id}
-                    onPress={() => toggleAccordion(accordion.id)}
+                    onPress={() => {
+                        // Prevent toggling if current accordion is incomplete and trying to collapse
+                        if (expandedAccordionId === accordion.id && !isAccordionComplete(accordion.id)) {
+                             Alert.alert(
+                                "Aviso",
+                                "Preencha todos os campos obrigatórios da despesa atual antes de fechar."
+                            );
+                            return;
+                        }
+                         // Prevent toggling if another accordion is incomplete and trying to expand a new one
+                        if (expandedAccordionId !== null && expandedAccordionId !== accordion.id && !isAccordionComplete(expandedAccordionId)) {
+                             Alert.alert(
+                                "Aviso",
+                                "Preencha todos os campos obrigatórios da despesa aberta antes de mudar para outra."
+                            );
+                            return;
+                        }
+                        toggleAccordion(accordion.id);
+                    }}
                 >
 
-                    {/* Conteúdo do Accordion */}
-
-                    {(!accordion.refundType || accordion.totalValue <= 0 || !accordion.attachment) && (
-                        <View className="bg-red-100 p-3 rounded-lg mb-4">
-                            <Text className="text-red-500 font-bold">
-                                Preencha todos os campos obrigatórios:
+                    {/* Validation Message */}
+                    {(expandedAccordionId === accordion.id && !isAccordionComplete(accordion.id)) && (
+                        <View className="bg-red-100 p-3 rounded-lg mb-4 border border-red-300">
+                            <Text className="text-red-600 font-bold mb-1">
+                                Campos obrigatórios pendentes:
                             </Text>
-                            {!accordion.refundType && <Text>- Tipo de Reembolso</Text>}
-                            {accordion.totalValue <= 0 && <Text>- Valor </Text>}
-                            {(!accordion.description && accordion.totalValue > limit )&& <Text>- Descrição</Text>}
-                            {!accordion.attachment && <Text>- Recibo</Text>}
+                            {!accordion.refundType && <Text className="text-red-500">- Tipo de Despesa</Text>}
+                            {accordion.totalValue <= 0 && <Text className="text-red-500">- Valor (deve ser maior que zero)</Text>}
+                            {(accordion.totalValue > limit && !accordion.description) && <Text className="text-red-500">- Descrição (obrigatória para valores acima de {formatCurrency(limit)})</Text>}
+                            {!accordion.attachment && <Text className="text-red-500">- Recibo</Text>}
                         </View>
-                    )}  
+                    )}
 
                     {(accordion.isSaved) && (
-                        <View className="bg-green-100 p-3 rounded-lg mb-4">
-                            <Text className="text-green-500 font-bold">Despesa Salva com Sucesso!</Text>
+                        <View className="bg-green-100 p-3 rounded-lg mb-4 border border-green-300">
+                            <Text className="text-green-600 font-bold">Despesa Salva com Sucesso!</Text>
                         </View>
-                            )}                   
+                    )}
 
-                    {/*Change Type*/}
-                    <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
+                    {/* Change Type */}
+                    <Text className="mb-2 text-lg font-semibold text-gray-700">Tipo de Despesa *</Text>
                     <View className="flex-row justify-between mb-4">
                         <TouchableOpacity
                             onPress={() => {
@@ -272,7 +346,9 @@ const RefundRequestScreen = () => {
                         </TouchableOpacity>
                     </View>
 
-                    <Text className="mb-2 text-lg font-bold">Descrição</Text>
+                     <Text className={`mb-2 text-lg font-semibold text-gray-700 ${accordion.totalValue > limit ? 'text-yellow-600' : 'text-gray-700'}`}>
+                        Descrição {accordion.totalValue > limit ? '*' : ''}
+                    </Text>
                     <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
                         <Ionicons name="pencil" size={20} color="#6B7280" />
                         <TextInput
@@ -285,7 +361,7 @@ const RefundRequestScreen = () => {
                         />
                     </View>
 
-                    <Text className="mb-2 text-lg font-bold">Valor</Text>
+                    <Text className="mb-2 text-lg font-semibold text-gray-700">Valor *</Text>
                         {accordion.totalValue > limit ? <Text className="text-md pb-2 font-bold text-[#e3be22]">  Você está acima do limite de {limit}</Text> : null}
                     <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 10, borderRadius: 8, borderColor: '#ccc', marginBottom: 20 }}>
                         <MaterialIcons name={accordion.refundType == 'value' ?  'attach-money' : 'add-box'} size={20} color="#6B7280" />
@@ -306,50 +382,60 @@ const RefundRequestScreen = () => {
                         )}
                     </View>
 
-                    <TouchableOpacity
+                    <Text className="mb-2 text-lg font-semibold text-gray-700">Recibo *</Text>
+                     <TouchableOpacity
                         onPress={() => handleImageUpload(accordion.id)}
-                        className="bg-blue-500 p-3 rounded-lg flex-row items-center mb-6"
+                        disabled={accordion.isSaved}
+                        className={`p-3 rounded-lg flex-row items-center justify-center mb-4 ${accordion.isSaved ? 'bg-gray-300' : 'bg-blue-500'}`}
                     >
-                        <Ionicons name="image-outline" size={20} color="white" />
-                        <Text className="text-white ml-2">Adicionar Recibo</Text>
+                        <Ionicons name="image-outline" size={20} color={accordion.isSaved ? 'gray' : "white"} />
+                        <Text className={`ml-2 ${accordion.isSaved ? 'text-gray-500' : 'text-white font-semibold'}`}>
+                            {accordion.attachment ? "Alterar Recibo" : "Adicionar Recibo"}
+                        </Text>
                     </TouchableOpacity>
 
                     {accordion.attachment && (
-                        <View className="mb-6">
-                            <MaterialIcons name={refundType == 'value' ?  'close' : 'close'} size={20} color="#FF0000" onPress={removeImage}/>
-                            <Image
+                        <View className="mb-4 relative self-start">
+                             <Image
                                 source={{ uri: accordion.attachment || undefined }}
                                 style={{ width: 150, height: 150, borderRadius: 8 }}
                             />
+                            {!accordion.isSaved && (
+                                <TouchableOpacity
+                                    onPress={removeImage}
+                                    style={{ position: 'absolute', top: -10, right: -10, backgroundColor: 'white', borderRadius: 15, padding: 2 }}
+                                >
+                                    <MaterialIcons name={'close'} size={20} color="#FF6347" />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     )}
 
-                        <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
-                            <Text className="text-sm font-bold text-[#6B7280] pb-2">VALOR TOTAL</Text>
-                            <Text className="text-4xl font-bold ">{formatCurrency(accordion.totalValue * (accordion.refundType === 'quantity' ? quantityMult: 1 ))}</Text>
-                        </View>
+                    <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
+                        <Text className="text-sm font-bold text-[#6B7280] pb-2">VALOR TOTAL</Text>
+                        <Text className="text-4xl font-bold ">{formatCurrency(accordion.totalValue * (accordion.refundType === 'quantity' ? quantityMult: 1 ))}</Text>
+                    </View>
 
-                    {/* Save Accordion | Send to Back  */}
-                    <TouchableOpacity
-                        className={`w-full p-3 mb-10 rounded-lg ${
-                            accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
+                    {/* Save Accordion | Send to Back */}
+                     <TouchableOpacity
+                        className={`w-full p-3 mb-4 rounded-lg ${
+                            accordion.isSaved || !isAccordionComplete(accordion.id)
                                 ? 'bg-gray-300'
                                 : 'bg-green-500'
                         }`}
                         onPress={() => saveAccordion(accordion.id)}
-                        disabled={accordion.isSaved}
+                        disabled={accordion.isSaved || !isAccordionComplete(accordion.id)}
                     >
                         <Text
                             className={`text-center font-bold ${
-                                accordion.isSaved || (!accordion.refundType || !accordion.description || accordion.totalValue <= 0 || !accordion.attachment)
+                                accordion.isSaved || !isAccordionComplete(accordion.id)
                                     ? 'text-gray-500'
                                     : 'text-white'
                             }`}
-                        >Salvar Despesa</Text>
+                        >{accordion.isSaved ? "Despesa Salva" : "Salvar Despesa"}</Text>
                     </TouchableOpacity>
-                    
 
-                    {/* Delete Accordion */}
+                    {/* Delete Accordion - Keep commented or implement if needed */}
                     {/* <TouchableOpacity
                         className={`w-full p-3 mb-10 rounded-lg ${
                             accordion.isSaved
@@ -367,55 +453,79 @@ const RefundRequestScreen = () => {
                             }`}
                         >Deletar Despesa</Text>
                     </TouchableOpacity> */}
-                
+
                 </ListItem.Accordion>
             ))}
 
             {/* Add Accordion */}
             <TouchableOpacity
-                className={`w-full p-3 mb-10 rounded-lg ${
-                    expandedAccordionId !== null && isAccordionComplete
+                className={`w-full p-3 mb-4 rounded-lg ${
+                    isAddExpenseDisabled
                         ? 'bg-gray-300'
                         : 'bg-blue-500'
                 }`}
                 onPress={createNewRefund}
-                disabled={
-                    accordions.some((accordion) => accordion.isSaved == false)
-                }
+                disabled={isAddExpenseDisabled}
             >
                 <Text
                     className={`text-center font-bold ${
-                        expandedAccordionId !== null && isAccordionComplete
+                        isAddExpenseDisabled
                             ? 'text-gray-500'
                             : 'text-white'
                     }`}
                 >
-                    {isFirstAction ? "Começar Reembolso" : "Adicionar Despesa"}
+                    {isFirstAction ? "Começar Reembolso" : "Adicionar Nova Despesa"}
                 </Text>
             </TouchableOpacity>
 
-            {/* Submit */}
-            <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={isSubmitDisabled}
-                className={`w-full p-3 mb-10 rounded-lg ${
-                    isSubmitDisabled
-                        ? 'bg-gray-300'
-                        : 'bg-green-500'
-                    }`
-                }
-            >
-                <Text 
-                    className={`text-center font-bold ${
-                        expandedAccordionId !== null && isAccordionComplete
-                            ? 'text-gray-500'
-                            : 'text-white'
+            {/* Submit and Cancel Buttons */}
+            <View className="flex-row justify-between items-center mb-10">
+                 {/* Cancel Button */}
+                 <TouchableOpacity
+                    onPress={handleCancel}
+                    disabled={isCancelDisabled}
+                    className={`flex-1 p-3 rounded-lg mr-2 ${
+                        isCancelDisabled
+                            ? 'bg-gray-300'
+                            : 'bg-red-500'
                         }`
                     }
                 >
-                    Enviar Pedido de Reembolso
-                </Text>
-            </TouchableOpacity>
+                    <Text
+                        className={`text-center font-bold ${
+                            isCancelDisabled
+                                ? 'text-gray-500'
+                                : 'text-white'
+                            }`
+                        }
+                    >
+                        Cancelar
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Submit Button */}
+                <TouchableOpacity
+                    onPress={handleSubmit}
+                    disabled={isSubmitDisabled}
+                    className={`flex-1 p-3 rounded-lg ml-2 ${
+                        isSubmitDisabled
+                            ? 'bg-gray-300'
+                            : 'bg-green-500'
+                        }`
+                    }
+                >
+                    <Text
+                        className={`text-center font-bold ${
+                            isSubmitDisabled
+                                ? 'text-gray-500'
+                                : 'text-white'
+                            }`
+                        }
+                    >
+                        Enviar Pedido
+                    </Text>
+                </TouchableOpacity>
+            </View>
 
         </ScrollView>
     );
