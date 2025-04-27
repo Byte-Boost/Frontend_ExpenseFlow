@@ -29,22 +29,6 @@ export default function RefundList() {
     setDisplayYear(displayYear + 1);
   }
 
-  /*
-    const refunds = [
-        { id: '1', name: 'Refund 1', amount: 100, date: '2025-09-01', status: 'pending' },
-        { id: '2', name: 'Refund 2', amount: 200, date: '2025-10-10', status: 'pending' },
-        { id: '3', name: 'Refund 2', amount: 200, date: '2025-03-12', status: 'pending' },
-        { id: '4', name: 'Refund 2', amount: 200, date: '2025-03-11', status: 'pending' },
-        { id: '5', name: 'Refund 3', amount: 300, date: '2025-07-15', status: 'pending' },
-        { id: '6', name: 'Refund 3', amount: 300, date: '2025-12-15', status: 'pending' },
-        { id: '7', name: 'Refund 3', amount: 300, date: '2025-01-15', status: 'pending' },
-        { id: '8', name: 'Refund 3', amount: 300, date: '2025-02-15', status: 'pending' },
-        { id: '9', name: 'Refund 3', amount: 300, date: '2025-04-15', status: 'pending' },
-        { id: '10', name: 'Refund 3', amount: 300, date: '2025-05-15', status: 'pending' },
-    ];*/
-
-  const router = useRouter();
-
   useEffect(() => {
     const fetchRefunds = async () => {
       try {
@@ -52,7 +36,7 @@ export default function RefundList() {
           displayMonth.toString(),
           displayYear.toString()
         );
-        console.log("Refunds:", response);
+        // console.log("Refunds:", response);
 
         setRefunds(response);
       } catch (error) {
@@ -132,6 +116,10 @@ export default function RefundList() {
       <Text className="text-gray-600">
         Data: {new Date(item.date).toLocaleString()}
       </Text>
+      <Text className="text-gray-600">
+        Projeto:{" "}
+        {items.find((project) => project.value === item.projectId)?.label || ""}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -187,7 +175,7 @@ export default function RefundList() {
                 inputAndroid: {
                   fontSize: 12,
                   paddingVertical: 8,
-                  paddingHorizontal: 12,
+                  paddingHorizontal: 2,
                   color: "#000",
                 },
                 placeholder: {
@@ -220,7 +208,7 @@ export default function RefundList() {
                 inputAndroid: {
                   fontSize: 12,
                   paddingVertical: 8,
-                  paddingHorizontal: 12,
+                  paddingHorizontal: 2,
                   color: "#000",
                 },
                 placeholder: {

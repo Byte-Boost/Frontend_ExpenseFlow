@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { formatCurrency } from "@/utils/formmatters";
@@ -15,10 +16,11 @@ import * as FileSystem from "expo-file-system";
 import { ListItem } from "@rneui/themed";
 import RefundService from "@/services/refundService";
 import Refund from "@/utils/refund";
-import { useAlert } from "@/hooks/useAlert";
+import ProjectService from "@/services/projectService";
+import TypeSelector from "./TypeSelector";
 
 const _refundService = new RefundService();
-const { showAlert, AlertComponent } = useAlert();
+const _projectService = new ProjectService();
 enum ExpenseType {
   VALUE = "value",
   QUANTITY = "quantity",
@@ -37,14 +39,15 @@ interface Accordion {
   inputValue: number;
   totalValue: number;
   isSaved: false;
+  quantityType?: string;
 }
 
 const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [refund, setRefund] = useState<Refund | null>(null);
   const [expenseType, setExpenseType] = useState("");
-  const [quantityList, setQuantityList] = useState([]);
-  const [quantityMult, setQuantityMult] = useState(10);
-  const [expenseLimit, setExpenseLimit] = useState(100);
+  const [quantityOptions, setQuantityOptions] = useState([]);
+  const [quantityMult, setQuantityMult] = useState(0);
+  const [expenseLimit, setExpenseLimit] = useState(0);
 
   const [isFirstAction, setIsFirstAction] = useState(true);
 
@@ -54,16 +57,24 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   );
   useEffect(() => {
     getPreferences();
-  });
-
+  }, []);
   const getPreferences = async () => {
-    const preferences = await _refundService.getRefundById(projectId);
-    setExpenseLimit(preferences.expenseLimit);
+    const project_info = await _projectService.getProjectById(projectId);
+    const preferences = project_info.preferences;
+    if (preferences) {
+      setExpenseLimit(preferences.expenseLimit ?? Number.MAX_SAFE_INTEGER);
+      setQuantityOptions(
+        preferences.quantityValues.map((item: { [key: string]: number }) => ({
+          name: Object.keys(item)[0],
+          value: Object.values(item)[0],
+        }))
+      );
+    }
   };
 
   const createNewRefund = async () => {
     if (isFirstAction) {
-      let res = await _refundService.createRefund();
+      let res = await _refundService.createRefund(projectId);
       setRefund(new Refund(res.refundId));
       setIsFirstAction(false);
     }
@@ -84,33 +95,21 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     setExpandedAccordionId(newAccordion.id);
   };
 
-  const deleteAccordion = (id: number) => {
-    const updatedAccordions = accordions
-      .filter((accordion) => accordion.id !== id)
-      .map((accordion, index) => ({ ...accordion, id: index + 1 }));
-    setAccordions(updatedAccordions);
-
-    if (expandedAccordionId === id) {
-      setExpandedAccordionId(null);
-    }
-  };
-
   const toggleAccordion = (id: number) => {
     const currentAccordion = accordions.find(
       (accordion) => accordion.id === expandedAccordionId
     );
-    if (expandedAccordionId !== null) {
-      if (currentAccordion) {
-        if (accordionHasError(currentAccordion)) {
-          showAlert(
-            "Aviso",
-            "Preencha todos os campos antes de abrir outra Despesa",
-            "error"
-          );
-          return;
-        }
+
+    if (expandedAccordionId === id && accordions.length) {
+      if (currentAccordion && accordionHasError(currentAccordion)) {
+        Alert.alert(
+          "Aviso",
+          "Preencha todos os campos antes de abrir outra Despesa"
+        );
+        return;
       }
     }
+
     setExpandedAccordionId(expandedAccordionId === id ? null : id);
   };
 
@@ -141,69 +140,102 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const saveAccordion = async (id: number) => {
     const accordion = accordions.find((accordion) => accordion.id === id);
     if (!accordion) {
-      showAlert("Erro", "Accordion não encontrado.", "error");
+      Alert.alert("Erro", "Accordion não encontrado.");
       return;
     }
 
-    const { expenseType, totalValue, attachment, description } = accordion;
+    const { expenseType, totalValue, quantityType, attachment, description } =
+      accordion;
 
     if (accordionHasError(accordion)) {
-      showAlert(
-        "Erro",
-        "Preencha todos os campos obrigatórios antes de salvar.",
-        "error"
+      Alert.alert(
+        "Aviso",
+        "Preencha todos os campos obrigatórios antes de salvar."
       );
       return;
     }
     try {
       if (!attachment) {
-        showAlert("Erro", "Anexo de recibo não encontrado.", "error");
+        Alert.alert("Erro", "Anexo de recibo não encontrado.");
         return;
       }
       let base64attachment = await FileSystem.readAsStringAsync(attachment, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      let expenseId = await _refundService.createExpense(
-        refund?.id!,
+      if (!refund) {
+        Alert.alert("Erro", "Reembolso não encontrado.");
+        return;
+      }
+      console.log(
+        refund.id,
         expenseType,
         totalValue,
-        accordion.description,
-        base64attachment
+        description,
+        quantityType
+      );
+      let expenseId = await _refundService.createExpense(
+        refund.id,
+        expenseType,
+        totalValue,
+        description,
+        base64attachment,
+        quantityType
       );
       updateAccordion(id, "isSaved", true);
       updateAccordion(id, "expenseId", expenseId);
     } catch (err) {
       console.log(err);
-      showAlert(
-        "Erro",
-        "Erro ao salvar a despesa. Tente novamente mais tarde.",
-        "error"
-      );
+      Alert.alert("Erro", "Erro ao salvar a despesa.");
     }
   };
 
   const handleImageUpload = async (id: number) => {
-    // Requests permission
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      showAlert(
-        "Permissão Negada",
-        "Você precisa permitir o acesso à galeria.",
-        "error"
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const mediaPermission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (
+      cameraPermission.status !== "granted" ||
+      mediaPermission.status !== "granted"
+    ) {
+      Alert.alert(
+        "Permissão necessária",
+        "Você precisa permitir o acesso à câmera e à galeria para adicionar um recibo."
       );
       return;
     }
 
-    // Open the gallery to choose a photo
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      // allowsEditing: true, // Allows image cropping
-      quality: 1, // Maximum image quality
-    });
+    Alert.alert("Selecionar Imagem", "Como você deseja adicionar o recibo?", [
+      {
+        text: "Cancelar",
+        style: "cancel",
+      },
+      {
+        text: "Galeria",
+        onPress: async () => {
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 1,
+          });
 
-    if (!result.canceled) {
-      updateAccordion(id, "attachment", result.assets[0].uri); // Updates the specific accordion's attachment
-    }
+          if (!result.canceled) {
+            updateAccordion(id, "attachment", result.assets[0].uri);
+          }
+        },
+      },
+      {
+        text: "Câmera",
+        onPress: async () => {
+          const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 1,
+          });
+
+          if (!result.canceled) {
+            updateAccordion(id, "attachment", result.assets[0].uri);
+          }
+        },
+      },
+    ]);
   };
 
   const removeImage = () => {
@@ -212,11 +244,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
 
   const handleSubmit = async () => {
     if (isFirstAction || refund == null) {
-      showAlert(
-        "Erro",
-        "Crie uma nova despesa antes de enviar o pedido.",
-        "error"
-      );
+      Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
       return;
     }
     await _refundService.closeRefund(refund.id).then(() => {
@@ -260,32 +288,37 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
 
   const isSubmitDisabled =
     isFirstAction ||
-    (expandedAccordionId !== null && allAccordionsCompleted) ||
+    (expandedAccordionId !== null && !allAccordionsCompleted) ||
     accordions.some((accordion) => accordion.isSaved == false);
 
+  useEffect(() => {
+    setAccordions((prevAccordions) =>
+      prevAccordions.map((accordion) =>
+        accordion.expenseType === ExpenseType.QUANTITY
+          ? {
+              ...accordion,
+              totalValue: accordion.inputValue * (quantityMult || 1),
+            }
+          : accordion
+      )
+    );
+  }, [quantityMult]);
   return (
     <ScrollView className="p-5 bg-gray-50 h-full">
       <Text className="text-xl font-bold text-center mb-6">{projectName}</Text>
-      <Text className="text-md font-bold text-center mb-6">
-        Limite de Despesa: {formatCurrency(expenseLimit)}
-      </Text>
-      <Text className="text-md font-bold text-center mb-6">
-        Despesas Criadas: {accordions.length}
-      </Text>
-      <Text className="text-md font-bold text-center mb-6">
-        Despesas Salvas: {accordions.filter((a) => a.isSaved).length}
-      </Text>
-      <Text className="text-md font-bold text-center mb-6">
-        Despesas Pendentes: {accordions.filter((a) => !a.isSaved).length}
-      </Text>
       {accordions.map((accordion) => (
         <ListItem.Accordion
           key={accordion.id}
           content={
             <>
-              <Ionicons name={"cash"} size={30} color={"gray"} />
+              <Ionicons
+                name={"cash"}
+                className="pr-2"
+                size={30}
+                color={"gray"}
+              />
               <ListItem.Content>
-                <ListItem.Title>Despesa {accordion.id}</ListItem.Title>
+                <ListItem.Title> Despesa {accordion.id}</ListItem.Title>
               </ListItem.Content>
             </>
           }
@@ -293,7 +326,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
           onPress={() => toggleAccordion(accordion.id)}
         >
           {/* Conteúdo do Accordion */}
-          {AlertComponent}
           {accordionHasError(accordion) && accordionHasErrorText(accordion)}
 
           {accordion.isSaved && (
@@ -303,7 +335,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               </Text>
             </View>
           )}
-
           {/*Change Type*/}
           <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
           <View className="flex-row justify-between mb-4">
@@ -337,44 +368,57 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 Valor
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                if (accordion.isSaved) {
-                  return;
-                }
-                updateAccordion(
-                  accordion.id,
-                  "expenseType",
-                  ExpenseType.QUANTITY
-                );
-              }}
-              className={`flex-1 flex-row items-center p-2 rounded-lg border ml-2 ${
-                accordion.expenseType === ExpenseType.QUANTITY
-                  ? "border-blue-500"
-                  : "border-gray-300"
-              }`}
-            >
-              <Ionicons
-                name="car-sport"
-                size={20}
-                color={
+
+            {quantityOptions.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  if (accordion.isSaved) {
+                    return;
+                  }
+                  updateAccordion(
+                    accordion.id,
+                    "expenseType",
+                    ExpenseType.QUANTITY
+                  );
+                }}
+                className={`flex-1 flex-row items-center p-2 rounded-lg border ml-2 ${
                   accordion.expenseType === ExpenseType.QUANTITY
-                    ? "blue"
-                    : "gray"
-                }
-              />
-              <Text
-                className={`ml-2 ${
-                  accordion.expenseType === ExpenseType.QUANTITY
-                    ? "text-blue-500"
-                    : "text-gray-700"
+                    ? "border-blue-500"
+                    : "border-gray-300"
                 }`}
               >
-                Quantidade
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name="car-sport"
+                  size={20}
+                  color={
+                    accordion.expenseType === ExpenseType.QUANTITY
+                      ? "blue"
+                      : "gray"
+                  }
+                />
+                <Text
+                  className={`ml-2 ${
+                    accordion.expenseType === ExpenseType.QUANTITY
+                      ? "text-blue-500"
+                      : "text-gray-700"
+                  }`}
+                >
+                  Quantidade
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
+          {accordion.expenseType === ExpenseType.QUANTITY && (
+            <TypeSelector
+              onValueChange={(value, label) => {
+                setQuantityMult(Number(value));
+                updateAccordion(accordion.id, "quantityType", label);
+              }}
+              selectedValue={""}
+              options={quantityOptions}
+            />
+          )}
           <Text className="mb-2 text-lg font-bold">Descrição</Text>
           <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
             <Ionicons name="pencil" size={20} color="#6B7280" />
@@ -497,32 +541,13 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               Salvar Despesa
             </Text>
           </TouchableOpacity>
-
-          {/* Delete Accordion */}
-          {/* <TouchableOpacity
-                        className={`w-full p-3 mb-10 rounded-lg ${
-                            accordion.isSaved
-                                ? 'bg-gray-300'
-                                : 'bg-red-500'
-                        }`}
-                        onPress={() => deleteAccordion(accordion.id)}
-                        disabled={accordion.isSaved}
-                    >
-                        <Text 
-                            className={`text-center font-bold ${
-                                accordion.isSaved
-                                    ? 'text-gray-500'
-                                    : 'text-white'
-                            }`}
-                        >Deletar Despesa</Text>
-                    </TouchableOpacity> */}
         </ListItem.Accordion>
       ))}
 
       {/* Add Accordion */}
       <TouchableOpacity
         className={`w-full p-3 mb-10 rounded-lg ${
-          expandedAccordionId !== null && allAccordionsCompleted
+          expandedAccordionId !== null && !allAccordionsCompleted
             ? "bg-gray-300"
             : "bg-blue-500"
         }`}
@@ -531,7 +556,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       >
         <Text
           className={`text-center font-bold ${
-            expandedAccordionId !== null && allAccordionsCompleted
+            expandedAccordionId !== null && !allAccordionsCompleted
               ? "text-gray-500"
               : "text-white"
           }`}
@@ -541,23 +566,26 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       </TouchableOpacity>
 
       {/* Submit */}
-      <TouchableOpacity
-        onPress={handleSubmit}
-        disabled={isSubmitDisabled}
-        className={`w-full p-3 mb-10 rounded-lg ${
-          isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
-        }`}
-      >
-        <Text
-          className={`text-center font-bold ${
-            expandedAccordionId !== null && allAccordionsCompleted
-              ? "text-gray-500"
-              : "text-white"
+      {isFirstAction ? null : (
+        <TouchableOpacity
+          onPress={handleSubmit}
+          disabled={isSubmitDisabled}
+          className={`w-full p-3 mb-10 rounded-lg ${
+            isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
           }`}
         >
-          Enviar Pedido de Reembolso
-        </Text>
-      </TouchableOpacity>
+          <Text
+            className={`text-center font-bold ${
+              expandedAccordionId !== null && !allAccordionsCompleted
+                ? "text-gray-500"
+                : "text-white"
+            }`}
+          >
+            Enviar Pedido de Reembolso
+          </Text>
+        </TouchableOpacity>
+      )}
+      {/* Cancel */}
       <TouchableOpacity
         onPress={onClose}
         className={`w-full p-3 mb-10 rounded-lg bg-red-600`}

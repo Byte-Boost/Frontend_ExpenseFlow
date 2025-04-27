@@ -7,24 +7,36 @@ import {
   ScrollView,
 } from "react-native";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import ProjectService from "@/services/projectService";
+
+const _projectService = new ProjectService();
 
 const RefundRequestScreen = () => {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
-  const [projects, setProjects] = useState([
-    {
-      name: "Project 1",
-      id: 1,
-    },
-    {
-      name: "Project 2",
-      id: 2,
-    },
-    {
-      name: "Project 3",
-      id: 3,
-    },
-  ]);
+  const [projects, setProjects] = useState();
+
+  const fetchProjects = async () => {
+    try {
+      const response = await _projectService.getProjects();
+      const data = response;
+      setProjects(data);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  if (!projects) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-50">
+        <Text className="text-lg ">Carregando projetos...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView className="p-5 bg-gray-50 h-full">
       <Text className="text-2xl font-bold text-center mb-6">
@@ -34,7 +46,10 @@ const RefundRequestScreen = () => {
         <View className="grid grid-cols-3 gap-4">
           {!selectedProject &&
             projects.map((project, index) => (
-              <View key={index} className="border p-4 rounded-lg ">
+              <View
+                key={index}
+                className="border p-4 rounded-lg border-gray-500"
+              >
                 <TouchableOpacity
                   onPress={() => setSelectedProject(project.id)}
                   className="flex-1 justify-center items-center"
