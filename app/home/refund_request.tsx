@@ -12,9 +12,14 @@ import ProjectService from "@/services/projectService";
 
 const _projectService = new ProjectService();
 
+interface Project {
+  id: number;
+  name: string;
+}
+
 const RefundRequestScreen = () => {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
-  const [projects, setProjects] = useState();
+  const [projects, setProjects] = useState<Project[] | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -45,7 +50,7 @@ const RefundRequestScreen = () => {
       <View>
         <View className="grid grid-cols-3 gap-4">
           {!selectedProject &&
-            projects.map((project, index) => (
+            projects.map((project: Project, index: number) => (
               <View
                 key={index}
                 className="border p-4 rounded-lg border-gray-500"

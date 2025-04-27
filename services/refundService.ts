@@ -36,16 +36,28 @@ export default class RefundService {
     return await api.patch(`/refund/${id}/close`);
   }
 
+  public async deleteRefund(id: number) {
+    try {
+      const response = await api.delete(`/refund/${id}`);
+      return response.status;
+    } catch (err) {
+      console.error("Error deleting refund:", err);
+      throw err;
+    }
+  }
+
   public async createExpense(
     refundId: number,
     type: string,
     value: number,
     description: string | undefined,
-    file: string
+    file: string,
+    quantityType?: string
   ): Promise<number> {
     const response = await api.post(`/refund/expense`, {
       refundId: refundId,
       type: type,
+      quantityType: quantityType,
       value: value,
       description: description,
       file: file,

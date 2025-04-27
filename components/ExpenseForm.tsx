@@ -55,6 +55,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [expandedAccordionId, setExpandedAccordionId] = useState<number | null>(
     null
   );
+  const isCancelDisabled = isFirstAction;
   useEffect(() => {
     getPreferences();
   }, []);
@@ -111,6 +112,60 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     }
 
     setExpandedAccordionId(expandedAccordionId === id ? null : id);
+  };
+
+  const resetState = () => {
+    setAccordions([]);
+    setExpandedAccordionId(null);
+    setIsFirstAction(true);
+    setRefund(null);
+  };
+
+  const handleCancel = () => {
+    if (!refund || !refund.id) {
+      resetState();
+      return;
+    }
+
+    Alert.alert(
+      "Confirmar Cancelamento",
+      "Tem certeza que deseja cancelar este pedido de reembolso? Todas as despesas não salvas serão perdidas.",
+      [
+        {
+          text: "Não",
+          style: "cancel",
+        },
+        {
+          text: "Sim",
+          onPress: async () => {
+            try {
+              await _refundService.deleteRefund(refund.id);
+              resetState();
+              Alert.alert(
+                "Cancelado",
+                "Pedido de reembolso cancelado com sucesso."
+              );
+            } catch (error: any) {
+              console.error("Failed to delete refund:", error);
+              if (error.response && error.response.status === 403) {
+                Alert.alert(
+                  "Erro",
+                  "Não é possível cancelar um reembolso que já foi processado."
+                );
+                // Optionally reset state even on error, depending on desired UX
+                // resetState();
+              } else {
+                Alert.alert(
+                  "Erro",
+                  "Não foi possível cancelar o pedido de reembolso. Tente novamente."
+                );
+              }
+            }
+          },
+          style: "destructive", // iOS style for destructive actions
+        },
+      ]
+    );
   };
 
   const updateAccordion = (id: number, field: string, value: any) => {
@@ -365,7 +420,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                     : "text-gray-700"
                 }`}
               >
-                Valor
+                Valor *
               </Text>
             </TouchableOpacity>
 
@@ -419,7 +474,10 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               options={quantityOptions}
             />
           )}
-          <Text className="mb-2 text-lg font-bold">Descrição</Text>
+          <Text className="mb-2 text-lg font-bold">
+            {" "}
+            Descrição {accordion.totalValue > expenseLimit ? "*" : ""}
+          </Text>
           <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
             <Ionicons name="pencil" size={20} color="#6B7280" />
             <TextInput
@@ -488,13 +546,28 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               </View>
             )}
           </View>
-
+          <Text className="mb-2 text-lg font-semibold text-gray-700">
+            Recibo *
+          </Text>
           <TouchableOpacity
             onPress={() => handleImageUpload(accordion.id)}
-            className="bg-blue-500 p-3 rounded-lg flex-row items-center mb-6"
+            disabled={accordion.isSaved}
+            className={`p-3 rounded-lg flex-row items-center justify-center mb-4 ${
+              accordion.isSaved ? "bg-gray-300" : "bg-blue-500"
+            }`}
           >
-            <Ionicons name="image-outline" size={20} color="white" />
-            <Text className="text-white ml-2">Adicionar Recibo</Text>
+            <Ionicons
+              name="image-outline"
+              size={20}
+              color={accordion.isSaved ? "gray" : "white"}
+            />
+            <Text
+              className={`ml-2 ${
+                accordion.isSaved ? "text-gray-500" : "text-white font-semibold"
+              }`}
+            >
+              {accordion.attachment ? "Alterar Recibo" : "Adicionar Recibo"}
+            </Text>
           </TouchableOpacity>
 
           {accordion.attachment && (
@@ -585,13 +658,34 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
           </Text>
         </TouchableOpacity>
       )}
-      {/* Cancel */}
-      <TouchableOpacity
-        onPress={onClose}
-        className={`w-full p-3 mb-10 rounded-lg bg-red-600`}
-      >
-        <Text className={`text-center font-bold text-white`}>Cancelar</Text>
-      </TouchableOpacity>
+      {/* Cancel Button */}
+      {!isFirstAction && (
+        <TouchableOpacity
+          onPress={handleCancel}
+          disabled={isCancelDisabled}
+          className={` w-full p-3 mb-10 rounded-lg mr-2 ${
+            isCancelDisabled ? "bg-gray-300" : "bg-red-500"
+          }`}
+        >
+          <Text
+            className={`text-center font-bold ${
+              isCancelDisabled ? "text-gray-500" : "text-white"
+            }`}
+          >
+            Cancelar
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Voltar */}
+      {isFirstAction && (
+        <TouchableOpacity
+          onPress={onClose}
+          className={`w-full p-3 mb-10 rounded-lg bg-orange-600`}
+        >
+          <Text className={`text-center font-bold text-white`}>Voltar</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };
