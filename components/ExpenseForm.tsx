@@ -420,7 +420,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                     : "text-gray-700"
                 }`}
               >
-                Valor *
+                Valor
               </Text>
             </TouchableOpacity>
 
@@ -492,7 +492,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
             />
           </View>
 
-          <Text className="mb-2 text-lg font-bold">Valor</Text>
+          <Text className="mb-2 text-lg font-bold">Valor *</Text>
 
           {accordion.totalValue > expenseLimit ? (
             <Text className="text-md pb-2 font-bold text-[#e3be22]">
@@ -620,7 +620,8 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       {/* Add Accordion */}
       <TouchableOpacity
         className={`w-full p-3 mb-10 rounded-lg ${
-          expandedAccordionId !== null && !allAccordionsCompleted
+          (expandedAccordionId !== null && !allAccordionsCompleted) ||
+          accordions.some((accordion) => accordion.isSaved == false)
             ? "bg-gray-300"
             : "bg-blue-500"
         }`}
@@ -629,7 +630,8 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       >
         <Text
           className={`text-center font-bold ${
-            expandedAccordionId !== null && !allAccordionsCompleted
+            (expandedAccordionId !== null && !allAccordionsCompleted) ||
+            accordions.some((accordion) => accordion.isSaved == false)
               ? "text-gray-500"
               : "text-white"
           }`}
@@ -649,7 +651,8 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         >
           <Text
             className={`text-center font-bold ${
-              expandedAccordionId !== null && !allAccordionsCompleted
+              (expandedAccordionId !== null && !allAccordionsCompleted) ||
+              accordions.some((accordion) => accordion.isSaved == false)
                 ? "text-gray-500"
                 : "text-white"
             }`}
