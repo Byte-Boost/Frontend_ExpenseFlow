@@ -6,11 +6,16 @@ export const useAlert = () => {
     show: false,
     title: "",
     message: "",
-    type: "success", 
+    type: "success",
     callback: () => {},
   });
 
-  const showAlert = (title: string, message: string, type: "success" | "error", callback = () => {}) => {
+  const showAlert = (
+    title: string,
+    message: string,
+    type: "success" | "error",
+    callback = () => {}
+  ) => {
     setAlertConfig({ show: true, title, message, type, callback });
   };
 
