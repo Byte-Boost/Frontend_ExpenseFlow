@@ -43,21 +43,21 @@ const RefundRequestScreen = () => {
   }
 
   return (
-    <ScrollView className="p-5 bg-gray-50 h-full">
+    <ScrollView className=" bg-gray-50 h-full">
       <Text className="text-2xl font-bold text-center mb-6">
         Pedido de Reembolso
       </Text>
       <View>
-        <View className="grid grid-cols-3 gap-4">
+        <View className="grid grid-cols-3 ">
           {!selectedProject &&
             projects.map((project: Project, index: number) => (
               <View
                 key={index}
-                className="border p-4 rounded-lg border-gray-500"
+                className="border-b-2 p-4 border-b-[#75757571] h-24"
               >
                 <TouchableOpacity
                   onPress={() => setSelectedProject(project.id)}
-                  className="flex-1 justify-center items-center"
+                  className="flex-1 justify-center"
                 >
                   <Text className="text-lg font-semibold">{project.name}</Text>
                 </TouchableOpacity>

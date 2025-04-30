@@ -17,7 +17,7 @@ export default function RefundList() {
   const [displayMonth, setDisplayMonth] = useState(currentDate.getMonth() + 1);
   const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
   const [refunds, setRefunds] = useState<any[]>([]);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<{ label: string; value: string }[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
@@ -99,6 +99,7 @@ export default function RefundList() {
     status: "in-process" | "rejected" | "approved";
     totalValue: number;
     date: string;
+    projectId: string;
   }
 
   const renderItem = ({ item }: { item: RefundItem }) => (

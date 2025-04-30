@@ -14,9 +14,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FF8C00"
       },
-      "package": "com.anonymous.ExpenseFlow"
+      "package": "github.byteboost.ExpenseFlow"
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +31,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#FF8C00"
         }
       ],
       "expo-secure-store"
