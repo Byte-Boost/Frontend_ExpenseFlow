@@ -1,7 +1,8 @@
 // REFUND LIST SCREEN
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
 import ProjectService from "@/services/projectService";
 import { formatCurrency } from "@/utils/formmatters";
@@ -29,23 +30,24 @@ export default function RefundList() {
     setDisplayYear(displayYear + 1);
   }
 
-  useEffect(() => {
-    const fetchRefunds = async () => {
-      try {
-        const response = await _refundService.getRefunds(
-          displayMonth.toString(),
-          displayYear.toString()
-        );
-        // console.log("Refunds:", response);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRefunds = async () => {
+        try {
+          const response = await _refundService.getRefunds(
+            displayMonth.toString(),
+            displayYear.toString()
+          );
 
-        setRefunds(response);
-      } catch (error) {
-        console.error("Error fetching refunds:", error);
-      }
-    };
+          setRefunds(response);
+        } catch (error) {
+          console.error("Error fetching refunds:", error);
+        }
+      };
 
-    fetchRefunds();
-  }, [displayMonth, displayYear]);
+      fetchRefunds();
+    }, [displayMonth, displayYear])
+  );
 
   useEffect(() => {
     const fetchProjects = async () => {
