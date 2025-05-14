@@ -223,6 +223,120 @@ export default function RefundList() {
         </View>
       </View>
 
+      <View className="flex-row justify-between space-x-4 mb-4">
+        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+          <View className="flex-1">
+            <Text>
+              <Text style={{ fontWeight: "bold" }}>
+              Total de Reembolsos {months[displayMonth - 1]}:{" "}
+              {refunds.filter((refund) =>
+              refund.date.startsWith(
+              `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+              )
+              ).length}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "green" }}>
+              Aprovados:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "approved"
+              ).length
+              }
+              </Text>
+              {"\n"}
+              <Text>
+              Em Processo:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "in-process"
+              ).length
+              }
+              </Text>
+              {"\n"}
+              <Text style={{ color: "red" }}>
+              Rejeitados:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "rejected"
+              ).length
+              }
+              </Text>
+            </Text>
+            </View>
+        </View>
+
+        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+            <View className="flex-1">
+            <Text>
+              <Text style={{ fontWeight: "bold" }}>
+              Total a Receber {months[displayMonth - 1]}:{" "}
+              {formatCurrency(
+                refunds
+                .filter((refund) =>
+                  refund.date.startsWith(
+                  `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  )
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "green" }}>
+              Aprovados:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "approved"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text>
+              Em Processo:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "in-process"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "red" }}>
+              Rejeitados:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "rejected"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+            </Text>
+            </View>
+        </View>
+      </View>
+
       <FlatList
         data={refunds
           .filter((refund) =>
