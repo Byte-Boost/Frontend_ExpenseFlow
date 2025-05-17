@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Alert,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
@@ -72,30 +73,20 @@ export default function Index() {
   };
 
   return (
-    <View className="flex-1 justify-center items-center p-6">
-      <LinearGradient
-        colors={["#f47f1f", "#f25f22", "#ea2223"]}
-        className="absolute left-0 right-0 top-0 h-screen"
+    <View className="flex-1  items-center  bg-white">
+      <Image
+        source={require("../assets/images/icon.png")}
+        className="w-32 h-32 mt-10 mb-5"
       />
+      <Text className="text-4xl font-extrabold mb-4  ">Login</Text>
 
-      <Text className="text-2xl font-extrabold mb-4 text-white">Login</Text>
-
-      <View
-        className={`w-full h-fit p-10 rounded-3xl flex flex-col gap-5 
-        ${
-          theme === "dark"
-            ? "bg-gray-900 border border-gray-700"
-            : "bg-white shadow-lg"
-        }`}
-      >
+      <View className={`w-full h-fit p-10  flex flex-col gap-5`}>
         <TextInput
-          className={`w-full p-3 rounded-lg border ${
-            theme === "dark"
-              ? "bg-gray-800 text-white border-gray-600"
-              : "bg-gray-100 text-black border-gray-300"
-          } ${emailError ? "border-red-500" : ""}`}
+          className={`w-full h-16 text-[1.35rem]   p-3 border ${"bg-gray-100 text-black border-gray-300"} ${
+            emailError ? "border-red-500" : ""
+          }`}
           placeholder="E-mail"
-          placeholderTextColor={theme === "dark" ? "#bbb" : "#666"}
+          placeholderTextColor={"#666"}
           value={email}
           onChangeText={(text) => {
             setEmail(text);
@@ -111,13 +102,9 @@ export default function Index() {
 
         <View className="relative">
           <TextInput
-            className={`w-full p-3 rounded-lg border ${
-              theme === "dark"
-                ? "bg-gray-800 text-white border-gray-600"
-                : "bg-gray-100 text-black border-gray-300"
-            }`}
+            className={`w-full p-3 h-14 text-[1.35rem]  border ${"bg-gray-100 text-black border-gray-300"}`}
             placeholder="Senha"
-            placeholderTextColor={theme === "dark" ? "#bbb" : "#666"}
+            placeholderTextColor={"#666"}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
@@ -129,17 +116,18 @@ export default function Index() {
             <Feather
               name={showPassword ? "eye" : "eye-off"}
               size={22}
-              color={theme === "dark" ? "#aaa" : "#555"}
+              color={"#555"}
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          className="w-full p-3 rounded-lg"
-          style={{ backgroundColor: "#f47f1f" }}
+          className="w-full p-3 bg-[#f47f1f] h-16 justify-center"
           onPress={handleLogin}
         >
-          <Text className="text-white text-center font-bold">Entrar</Text>
+          <Text className="text-white text-center text-[1.35rem] font-bold">
+            Entrar
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

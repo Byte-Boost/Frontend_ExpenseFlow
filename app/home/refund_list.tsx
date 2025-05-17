@@ -87,6 +87,12 @@ export default function RefundList() {
     approved: "text-green-500",
   };
 
+  const side_colors = {
+    "in-process": "border-l-cyan-400",
+    rejected: "border-l-red-400",
+    approved: "border-l-green-400",
+  };
+
   //FIX THIS TO USE RIGHT STUFF
   const translation = {
     "in-process": "Em processamento",
@@ -103,7 +109,11 @@ export default function RefundList() {
   }
 
   const renderItem = ({ item }: { item: RefundItem }) => (
-    <TouchableOpacity className="p-4 bg-white mb-2 rounded shadow">
+    <TouchableOpacity
+      className={`p-4 bg-white mb-2   rounded-lg shadow-md  border-l-4 ${
+        side_colors[item.status]
+      }`}
+    >
       <Text className="text-gray-600">
         Status:{" "}
         <Text className={` ${colors[item.status]}`}>

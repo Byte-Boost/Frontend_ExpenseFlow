@@ -1,4 +1,4 @@
-import { Tabs } from "expo-router";
+import { Tabs, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 
@@ -7,26 +7,56 @@ import { Text, useColorScheme, View } from "react-native";
 
 export default function RootLayout() {
   const theme = useColorScheme();
+  const router = useRouter();
+  const segments = useSegments();
+  const currentRoute =
+    segments.length > 0 ? segments[segments.length - 1] : "index";
+
+  const getTitle = (route: string) => {
+    switch (route) {
+      case "index":
+        return "Bem-Vindo ao ExpenseFlow";
+      case "refund_list":
+        return "Lista de Reembolsos";
+      case "refund_request":
+        return "Pedido de Reembolso";
+      default:
+        return "Bem-Vindo ao ExpenseFlow";
+    }
+  };
+  const title = getTitle(currentRoute);
 
   return (
     <View className="flex-1">
-      <View className="p-4 h-1/5 bg-[#FF8C00] flex">
-        <View className="flex flex-row items-center justify-between mb-2">
+      <View className="p-4 h-1/5 bg-[#FF8C00] flex ">
+        {/* Header with logo and theme toggle button */}
+        <View
+          className="flex flex-row items-center justify-between mb-2 pt-6"
+          onTouchStart={() => {
+            router.push("/settings/account_settings");
+          }}
+        >
           <View className="w-14 h-14 rounded-full bg-white flex justify-center items-center">
             <Text className="text-[#FF8C00]  font-bold">EF</Text>
           </View>
-          <Ionicons
-            name={theme === "dark" ? "sunny" : "moon"}
-            size={24}
-            color="#fff"
-            onPress={() => {
-              const newTheme = theme === "dark" ? "light" : "dark";
-              console.log(`Switching to ${newTheme} theme`);
-            }}
-          />
+          <View className="flex flex-row items-end justify-end gap-5 w-1/2">
+            {/* <Ionicons
+              name={theme === "dark" ? "sunny" : "moon"}
+              size={24}
+              color="#fff"
+              onPress={() => {
+                const newTheme = theme === "dark" ? "light" : "dark";
+                console.log(`Switching to ${newTheme} theme`);
+              }}
+            /> */}
+            <Ionicons name="notifications" size={24} color="#fff" />
+          </View>
+        </View>
+        {/* Title and subtitle */}
+        <View className="flex flex-row items-center justify-between mb-2">
+          <Text className="text-white text-2xl font-bold">{title}</Text>
         </View>
       </View>
-
       <Tabs
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
@@ -70,7 +100,6 @@ export default function RootLayout() {
         <Tabs.Screen name="index" options={{ title: "Home" }} />
         <Tabs.Screen name="refund_list" options={{ title: "Lista" }} />
         <Tabs.Screen name="refund_request" options={{ title: "Reembolso" }} />
-        <Tabs.Screen name="account_settings" options={{ title: "Conta" }} />
       </Tabs>
     </View>
   );
