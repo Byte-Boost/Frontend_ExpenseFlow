@@ -114,13 +114,18 @@ export default function RefundList() {
         side_colors[item.status]
       }`}
     >
-      <Text className="text-gray-600">
-        Status:{" "}
-        <Text className={` ${colors[item.status]}`}>
-          {" "}
-          {translation[item.status].toLocaleUpperCase()}
+      <View className="flex-row items-center">
+        <Text className="text-gray-600">
+          Status:{" "}
+          <Text className={` ${colors[item.status]}`}>
+            {" "}
+            {translation[item.status].toLocaleUpperCase()}
+          </Text>
         </Text>
-      </Text>
+        <View className="ml-auto">
+          <Ionicons name="information-circle" size={20} color="#4b5563" />
+        </View>
+      </View>
       <Text className="text-lg font-semibold">
         Quantidade: {formatCurrency(item.totalValue)}
       </Text>
@@ -129,7 +134,10 @@ export default function RefundList() {
       </Text>
       <Text className="text-gray-600">
         Projeto:{" "}
-        {items.find((project) => project.value === item.projectId)?.label || ""}
+        <Text className="font-bold">
+          {items.find((project) => project.value === item.projectId)?.label ||
+            ""}
+        </Text>
       </Text>
     </TouchableOpacity>
   );

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import ProjectService from "@/services/projectService";
+import { Ionicons } from "@expo/vector-icons";
 
 const _projectService = new ProjectService();
 
@@ -53,11 +54,12 @@ const RefundRequestScreen = () => {
             >
               <TouchableOpacity
                 onPress={() => setSelectedProject(project.id)}
-                className="flex-1"
+                className="flex-1  flex flex-row items-center justify-between"
               >
                 <Text className="text-xl font-semibold text-[#333333]">
                   {project.name}
                 </Text>
+                <Ionicons name="folder" size={24} color="#FF8C00" />
               </TouchableOpacity>
             </View>
           ))}

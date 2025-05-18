@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Image,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from "react-native";
+import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
@@ -21,19 +13,15 @@ export default function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-
   const [emailError, setEmailError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const router = useRouter();
-  const theme = useColorScheme();
-
   const { showAlert, AlertComponent } = useAlert();
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       const userLoggedIn = await SecureStore.getItemAsync("userLoggedIn");
-      console.log(userLoggedIn);
       setIsLoggedIn(userLoggedIn === "true");
     };
 
@@ -53,7 +41,7 @@ export default function Index() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showAlert("Oops!", "Por Favor preencha ambos os campos", "error");
+      showAlert("Oops!", "Por favor preencha ambos os campos", "error");
       return;
     }
 
@@ -61,7 +49,14 @@ export default function Index() {
       setEmailError("Por favor inserir um e-mail válido");
       return;
     }
-    let response = await _userService.login(email, password);
+
+    let response = await _userService.login(email, password).catch(() => {
+      showAlert(
+        "Oops!",
+        "Ocorreu um erro de conexão. Por favor, tente novamente mais tarde.",
+        "error"
+      );
+    });
     if (response.token === undefined) {
       showAlert("Oops!", response.error, "error");
       return;
@@ -73,20 +68,26 @@ export default function Index() {
   };
 
   return (
-    <View className="flex-1  items-center  bg-white">
-      <Image
-        source={require("../assets/images/icon.png")}
-        className="w-32 h-32 mt-10 mb-5"
-      />
-      <Text className="text-4xl font-extrabold mb-4  ">Login</Text>
+    <LinearGradient
+      colors={["#FF8C00", "#f97316", "#fbbf24"]}
+      style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+    >
+      <View className="w-full max-w-sm p-8 bg-white rounded-xl shadow-lg">
+        <Image
+          source={require("../assets/images/icon.png")}
+          className="w-32 h-32 mb-6 self-center"
+        />
+        <Text className="text-2xl font-semibold text-center mb-6">
+          Faça seu login
+        </Text>
 
-      <View className={`w-full h-fit p-10  flex flex-col gap-5`}>
+        {/* Email input */}
         <TextInput
-          className={`w-full h-16 text-[1.35rem]   p-3 border ${"bg-gray-100 text-black border-gray-300"} ${
-            emailError ? "border-red-500" : ""
-          }`}
+          className={`h-16 px-4 mb-4 text-lg border rounded-md ${
+            emailError ? "border-red-500" : "border-gray-300"
+          } bg-gray-100 text-black`}
           placeholder="E-mail"
-          placeholderTextColor={"#666"}
+          placeholderTextColor="#666"
           value={email}
           onChangeText={(text) => {
             setEmail(text);
@@ -97,39 +98,39 @@ export default function Index() {
         />
         {AlertComponent}
         {emailError && (
-          <Text className="text-red-500 text-md mb-3">{emailError}</Text>
+          <Text className="text-red-500 text-sm mb-3">{emailError}</Text>
         )}
 
+        {/* Password input */}
         <View className="relative">
           <TextInput
-            className={`w-full p-3 h-14 text-[1.35rem]  border ${"bg-gray-100 text-black border-gray-300"}`}
+            className="h-14 px-4 mb-6 text-lg border rounded-md bg-gray-100 text-black border-gray-300"
             placeholder="Senha"
-            placeholderTextColor={"#666"}
+            placeholderTextColor="#666"
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity
             onPress={() => setShowPassword(!showPassword)}
-            className="absolute right-4 top-1/2 -translate-y-1/2"
+            className="absolute right-4 top-1/3 -translate-y-1/2"
           >
             <Feather
               name={showPassword ? "eye" : "eye-off"}
               size={22}
-              color={"#555"}
+              color="#555"
             />
           </TouchableOpacity>
         </View>
 
+        {/* Submit button */}
         <TouchableOpacity
-          className="w-full p-3 bg-[#f47f1f] h-16 justify-center"
           onPress={handleLogin}
+          className="w-full h-16 bg-orange-500 rounded-md justify-center items-center mb-4"
         >
-          <Text className="text-white text-center text-[1.35rem] font-bold">
-            Entrar
-          </Text>
+          <Text className="text-white text-lg font-bold">Entrar</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 }

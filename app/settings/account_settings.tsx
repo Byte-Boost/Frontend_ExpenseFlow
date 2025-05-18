@@ -2,9 +2,29 @@ import { Ionicons } from "@expo/vector-icons";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
+import { jwtDecode } from "jwt-decode";
+import { useEffect, useState } from "react";
+
+type MyJwtPayload = {
+  email: string;
+};
 
 export default function AccountSettings() {
   const router = useRouter();
+  const [email, setEmail] = useState<string | undefined>(undefined);
+  const [username, setUsername] = useState<string | undefined>("Usuário");
+  const getEmail = async () => {
+    const token = await SecureStore.getItemAsync("bearerToken");
+    if (token) {
+      const decodedToken = jwtDecode<MyJwtPayload>(token);
+      setEmail(decodedToken.email);
+      setUsername(decodedToken.email.split("@")[0]);
+    }
+  };
+
+  useEffect(() => {
+    getEmail();
+  }, []);
   const handleLogout = async () => {
     Alert.alert("Sair", "Você tem certeza que deseja sair?", [
       {
@@ -36,9 +56,14 @@ export default function AccountSettings() {
       {/* Profile Section */}
       <View className="flex-1 justify-center items-center mt-6">
         <View className="bg-[#FF8C00] h-36 w-36 rounded-full justify-center items-center">
-          <Ionicons name="person" size={70} color="white" />
+          <Text className="text-white  font-bold text-4xl text-center place-content-center items-center">
+            {(username?.charAt(0)?.toUpperCase() ?? "") +
+              (username?.charAt(1)?.toUpperCase() ?? "")}
+          </Text>
         </View>
-        <Text className="mt-3 text-lg font-semibold text-gray-700">EMAIL</Text>
+        <Text className="mt-3 text-lg font-semibold text-gray-700">
+          {email}
+        </Text>
       </View>
 
       {/* Settings Options */}

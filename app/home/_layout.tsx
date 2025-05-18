@@ -1,9 +1,15 @@
 import { Tabs, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useState } from "react";
 
 import "../global.css";
 import { Text, View } from "react-native";
+import { jwtDecode } from "jwt-decode";
+
+type MyJwtPayload = {
+  email: string;
+};
 
 export default function RootLayout() {
   const router = useRouter();
@@ -11,19 +17,91 @@ export default function RootLayout() {
   const currentRoute =
     segments.length > 0 ? segments[segments.length - 1] : "index";
 
+  const [email, setEmail] = useState<string | undefined>(undefined);
+  const [username, setUsername] = useState<string | undefined>("Usuário");
+  const getEmail = async () => {
+    const token = await SecureStore.getItemAsync("bearerToken");
+    if (token) {
+      const decodedToken = jwtDecode<MyJwtPayload>(token);
+      setEmail(decodedToken.email);
+      setUsername(decodedToken.email.split("@")[0]);
+    }
+  };
+  useEffect(() => {
+    getEmail();
+  }, []);
+
   const getTitle = (route: string) => {
     switch (route) {
       case "home":
-        return "Olá, Usuário";
+        return (
+          <View className="flex flex-row items-center w-full">
+            <Text className="text-white text-2xl font-bold flex-1">
+              Olá, {username}{" "}
+            </Text>
+            <View className="flex flex-row items-center justify-end">
+              <Ionicons name="home" size={24} color="#fff" />
+            </View>
+          </View>
+        );
       case "refund_list":
-        return "Lista de Reembolsos";
+        return (
+          <View className="flex flex-row items-center w-full">
+            <Text className="text-white text-2xl font-bold flex-1">
+              Lista de Reembolsos
+            </Text>
+            <View className="flex flex-row items-center justify-end">
+              <Ionicons name="list" size={24} color="#fff" />
+            </View>
+          </View>
+        );
       case "refund_request":
-        return "Pedido de Reembolso";
+        return (
+          <View className="flex flex-row items-center w-full">
+            <Text className="text-white text-2xl font-bold flex-1">
+              Solicitar Reembolso
+            </Text>
+            <View className="flex flex-row items-center justify-end">
+              <Ionicons name="archive" size={24} color="#fff" />
+            </View>
+          </View>
+        );
       default:
-        return "Bem-Vindo ao ExpenseFlow";
+        return ``;
+    }
+  };
+  const getSubtitle = (route: string) => {
+    switch (route) {
+      case "home":
+        return (
+          <View className="flex flex-row items-center ">
+            <Text className="text-white text-md font-bold flex flex-row items-center">
+              Bem-vindo ao nosso aplicativo{" "}
+            </Text>
+          </View>
+        );
+      case "refund_list":
+        return (
+          <View className="flex flex-row items-center ">
+            <Text className="text-white text-md font-bold flex flex-row items-center">
+              Acompanhe seus reembolsos{" "}
+            </Text>
+          </View>
+        );
+      case "refund_request":
+        return (
+          <View className="flex flex-row items-center ">
+            <Text className="text-white text-md font-bold flex flex-row items-center">
+              Escolha um projeto para solicitar reembolso{" "}
+            </Text>
+          </View>
+        );
+      default:
+        return ``; // Add a name or identifier here
     }
   };
   const title = getTitle(currentRoute);
+  const subtitle = getSubtitle(currentRoute);
 
   return (
     <View className="flex-1">
@@ -36,7 +114,10 @@ export default function RootLayout() {
               router.push("/settings/account_settings");
             }}
           >
-            <Text className="text-[#FF8C00]  font-bold">EF</Text>
+            <Text className="text-[#FF8C00]  font-bold">
+              {(username?.charAt(0)?.toUpperCase() || "") +
+                (username?.charAt(1)?.toUpperCase() || "")}
+            </Text>
           </View>
           <View className="flex flex-row items-end justify-end gap-5 w-1/2">
             {/* <Ionicons
@@ -54,7 +135,7 @@ export default function RootLayout() {
         {/* Title and subtitle */}
         <View className="flex flex-col items-start justify-between mb-2">
           <Text className="text-white text-2xl font-bold">{title}</Text>
-          <Text className="text-white text-md font-bold">{title}</Text>
+          <Text className="text-white text-md font-bold">{subtitle}</Text>
         </View>
       </View>
       <Tabs
