@@ -136,16 +136,15 @@ export default function RefundList() {
 
   return (
     <View className="p-5 bg-gray-50 h-full">
-      <Text className="text-2xl font-bold text-center mb-6">
-        Lista de Reembolsos
-      </Text>
-      <View className="flex-row justify-between items-center mb-4">
+      <View className="flex-row justify-between items-center mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-r-4 border-[#FF8C00]">
         <TouchableOpacity
           onPress={() => {
             setDisplayMonth(displayMonth - 1);
           }}
         >
-          <Text style={{ fontSize: 24 }}>{"<"}</Text>
+          <Text style={{ fontSize: 24 }}>
+            <Ionicons name="chevron-back" size={24} color="black" />
+          </Text>
         </TouchableOpacity>
         <View className="flex-column items-center">
           <Text className="text-xl font-bold">{months[displayMonth - 1]}</Text>
@@ -156,82 +155,92 @@ export default function RefundList() {
             setDisplayMonth(displayMonth + 1);
           }}
         >
-          <Text style={{ fontSize: 24 }}>{">"}</Text>
+          <Text style={{ fontSize: 24 }}>
+            <Ionicons name="chevron-forward" size={24} color="black" />
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View className="flex-row justify-between space-x-4 mb-4">
-        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
-          <Ionicons
-            name="filter"
-            size={24}
-            color="black"
-            style={{ marginRight: 8 }}
-          />
-          <View className="flex-1">
-            <RNPickerSelect
-              onValueChange={(value) => setSelectedStatus(value)}
-              placeholder={{
-                label: "Selecione um status",
-                value: null,
-                color: "#9EA0A4",
-              }}
-              items={[
-                { label: "Em processo", value: "in-process" },
-                { label: "Aprovado", value: "approved" },
-                { label: "Rejeitado", value: "rejected" },
-              ]}
-              useNativeAndroidPickerStyle={false}
-              style={{
-                inputAndroid: {
-                  fontSize: 12,
-                  paddingVertical: 8,
-                  paddingHorizontal: 2,
-                  color: "#000",
-                },
-                placeholder: {
-                  color: "#9EA0A4",
-                  fontSize: 12,
-                },
-              }}
+      <View className="mb-6">
+        <Text className="text-lg font-semibold mb-3 text-gray-800">
+          Filtros
+        </Text>
+        <View className="flex-row justify-between gap-4">
+          {/* Status Filter */}
+          <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
+            <Ionicons
+              name="filter"
+              size={24}
+              color="black"
+              style={{ marginRight: 8 }}
             />
+            <View className="flex-1">
+              <RNPickerSelect
+                onValueChange={(value) => setSelectedStatus(value)}
+                placeholder={{
+                  label: "Selecione Status",
+                  value: null,
+                  color: "#9EA0A4",
+                }}
+                items={[
+                  { label: "Em processo", value: "in-process" },
+                  { label: "Aprovado", value: "approved" },
+                  { label: "Rejeitado", value: "rejected" },
+                ]}
+                useNativeAndroidPickerStyle={false}
+                style={{
+                  inputAndroid: {
+                    fontSize: 14,
+                    paddingVertical: 8,
+                    paddingHorizontal: 2,
+                    color: "#000",
+                  },
+                  placeholder: {
+                    color: "#9EA0A4",
+                    fontSize: 12,
+                  },
+                }}
+              />
+            </View>
           </View>
-        </View>
 
-        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
-          <Ionicons
-            name="filter"
-            size={24}
-            color="black"
-            style={{ marginRight: 8 }}
-          />
-          <View className="flex-1">
-            <RNPickerSelect
-              onValueChange={(value) => setSelectedProject(value)}
-              placeholder={{
-                label: "Selecione um projeto",
-                value: null,
-                color: "#9EA0A4",
-              }}
-              items={items}
-              useNativeAndroidPickerStyle={false}
-              style={{
-                inputAndroid: {
-                  fontSize: 12,
-                  paddingVertical: 8,
-                  paddingHorizontal: 2,
-                  color: "#000",
-                },
-                placeholder: {
-                  color: "#9EA0A4",
-                  fontSize: 12,
-                },
-              }}
+          {/* Project Filter */}
+          <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
+            <Ionicons
+              name="filter"
+              size={24}
+              color="black"
+              style={{ marginRight: 8 }}
             />
+            <View className="flex-1">
+              <RNPickerSelect
+                onValueChange={(value) => setSelectedProject(value)}
+                placeholder={{
+                  label: "Selecione Projeto",
+                  value: null,
+                  color: "#9EA0A4",
+                }}
+                items={items}
+                useNativeAndroidPickerStyle={false}
+                style={{
+                  inputAndroid: {
+                    fontSize: 14,
+                    paddingVertical: 8,
+                    paddingHorizontal: 2,
+                    color: "#000",
+                  },
+                  placeholder: {
+                    color: "#9EA0A4",
+                    fontSize: 12,
+                  },
+                }}
+              />
+            </View>
           </View>
         </View>
       </View>
 
+      {/* Refunds List */}
       <FlatList
         data={refunds
           .filter((refund) =>

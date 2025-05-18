@@ -359,72 +359,44 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     );
   }, [quantityMult]);
   return (
-    <ScrollView className="p-5 bg-gray-50 h-full">
-      <Text className="text-xl font-bold text-center mb-6">{projectName}</Text>
-      {accordions.map((accordion) => (
-        <ListItem.Accordion
-          key={accordion.id}
-          content={
-            <>
-              <Ionicons
-                name={"cash"}
-                className="pr-2"
-                size={30}
-                color={"gray"}
-              />
-              <ListItem.Content>
-                <ListItem.Title> Despesa {accordion.id}</ListItem.Title>
-              </ListItem.Content>
-            </>
-          }
-          isExpanded={expandedAccordionId === accordion.id}
-          onPress={() => toggleAccordion(accordion.id)}
-        >
-          {/* Conteúdo do Accordion */}
-          {accordionHasError(accordion) && accordionHasErrorText(accordion)}
+    <ScrollView className="p-5  h-full ">
+      <Text className="text-xl font-bold text-center mb-6 bg-white rounded-lg shadow-md p-4 border-l-4 border-l-[#FF8C00]">
+        {projectName}
+      </Text>
+      <View className=" bg-white rounded-lg shadow-md p-4 border-l-4">
+        {accordions.map((accordion) => (
+          <ListItem.Accordion
+            key={accordion.id}
+            content={
+              <>
+                <Ionicons
+                  name={"cash"}
+                  className="pr-2"
+                  size={30}
+                  color={"gray"}
+                />
+                <ListItem.Content>
+                  <ListItem.Title> Despesa {accordion.id}</ListItem.Title>
+                </ListItem.Content>
+              </>
+            }
+            isExpanded={expandedAccordionId === accordion.id}
+            onPress={() => toggleAccordion(accordion.id)}
+            className="mb-4 bg-white rounded-lg shadow-md border-l-4 "
+          >
+            {/* Conteúdo do Accordion */}
+            {accordionHasError(accordion) && accordionHasErrorText(accordion)}
 
-          {accordion.isSaved && (
-            <View className="bg-green-100 p-3 rounded-lg mb-4">
-              <Text className="text-green-500 font-bold">
-                Despesa Salva com Sucesso!
-              </Text>
-            </View>
-          )}
-          {/*Change Type*/}
-          <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
-          <View className="flex-row justify-between mb-4">
-            <TouchableOpacity
-              onPress={() => {
-                if (accordion.isSaved) {
-                  return;
-                }
-                updateAccordion(accordion.id, "expenseType", ExpenseType.VALUE);
-              }}
-              className={`flex-1 flex-row items-center p-2 rounded-lg border mr-2 ${
-                accordion.expenseType === ExpenseType.VALUE
-                  ? "border-blue-500"
-                  : "border-gray-300"
-              }`}
-            >
-              <Ionicons
-                name="pricetag"
-                size={20}
-                color={
-                  accordion.expenseType === ExpenseType.VALUE ? "blue" : "gray"
-                }
-              />
-              <Text
-                className={`ml-2 ${
-                  accordion.expenseType === ExpenseType.VALUE
-                    ? "text-blue-500"
-                    : "text-gray-700"
-                }`}
-              >
-                Valor
-              </Text>
-            </TouchableOpacity>
-
-            {quantityOptions.length > 0 && (
+            {accordion.isSaved && (
+              <View className="bg-green-100 p-3 rounded-lg mb-4">
+                <Text className="text-green-500 font-bold">
+                  Despesa Salva com Sucesso!
+                </Text>
+              </View>
+            )}
+            {/*Change Type*/}
+            <Text className="mb-2 text-lg font-bold">Tipo de Despesa</Text>
+            <View className="flex-row justify-between mb-4">
               <TouchableOpacity
                 onPress={() => {
                   if (accordion.isSaved) {
@@ -433,221 +405,240 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                   updateAccordion(
                     accordion.id,
                     "expenseType",
-                    ExpenseType.QUANTITY
+                    ExpenseType.VALUE
                   );
                 }}
-                className={`flex-1 flex-row items-center p-2 rounded-lg border ml-2 ${
-                  accordion.expenseType === ExpenseType.QUANTITY
+                className={`flex-1 flex-row items-center p-5 rounded-lg border mr-2 ${
+                  accordion.expenseType === ExpenseType.VALUE
                     ? "border-blue-500"
                     : "border-gray-300"
                 }`}
               >
                 <Ionicons
-                  name="car-sport"
+                  name="pricetag"
                   size={20}
                   color={
-                    accordion.expenseType === ExpenseType.QUANTITY
+                    accordion.expenseType === ExpenseType.VALUE
                       ? "blue"
                       : "gray"
                   }
                 />
                 <Text
                   className={`ml-2 ${
-                    accordion.expenseType === ExpenseType.QUANTITY
+                    accordion.expenseType === ExpenseType.VALUE
                       ? "text-blue-500"
                       : "text-gray-700"
                   }`}
                 >
-                  Quantidade
+                  Valor
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
 
-          {accordion.expenseType === ExpenseType.QUANTITY && (
-            <TypeSelector
-              onValueChange={(value, label) => {
-                setQuantityMult(Number(value));
-                updateAccordion(accordion.id, "quantityType", label);
-              }}
-              selectedValue={""}
-              options={quantityOptions}
-            />
-          )}
-          <Text className="mb-2 text-lg font-bold">
-            {" "}
-            Descrição {accordion.totalValue > expenseLimit ? "*" : ""}
-          </Text>
-          <View className="flex-row items-center bg-white p-2 rounded-lg border border-[#ccc] mb-4">
-            <Ionicons name="pencil" size={20} color="#6B7280" />
-            <TextInput
-              value={accordion.description}
-              onChangeText={(text) =>
-                updateAccordion(accordion.id, "description", text)
-              }
-              placeholder="Descreva a razão da despesa"
-              multiline
-              className="ml-2 w-full h-24 text-left"
-              editable={!accordion.isSaved}
-            />
-          </View>
+              {quantityOptions.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (accordion.isSaved) {
+                      return;
+                    }
+                    updateAccordion(
+                      accordion.id,
+                      "expenseType",
+                      ExpenseType.QUANTITY
+                    );
+                  }}
+                  className={`flex-1 flex-row items-center p-5 rounded-lg border ml-2 ${
+                    accordion.expenseType === ExpenseType.QUANTITY
+                      ? "border-blue-500"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <Ionicons
+                    name="car-sport"
+                    size={20}
+                    color={
+                      accordion.expenseType === ExpenseType.QUANTITY
+                        ? "blue"
+                        : "gray"
+                    }
+                  />
+                  <Text
+                    className={`ml-2 ${
+                      accordion.expenseType === ExpenseType.QUANTITY
+                        ? "text-blue-500"
+                        : "text-gray-700"
+                    }`}
+                  >
+                    Quantidade
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-          <Text className="mb-2 text-lg font-bold">Valor *</Text>
-
-          {accordion.totalValue > expenseLimit ? (
-            <Text className="text-md pb-2 font-bold text-[#e3be22]">
-              {" "}
-              Você está acima do limite de {expenseLimit}
-            </Text>
-          ) : null}
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "#fff",
-              padding: 10,
-              borderRadius: 8,
-              borderColor: "#ccc",
-              marginBottom: 20,
-            }}
-          >
-            <MaterialIcons
-              name={
-                accordion.expenseType == ExpenseType.VALUE
-                  ? "attach-money"
-                  : "add-box"
-              }
-              size={20}
-              color="#6B7280"
-            />
-            <TextInput
-              value={accordion.inputValue.toString()}
-              onChangeText={(text) =>
-                updateAccordion(accordion.id, "inputValue", text)
-              }
-              placeholder="Insira o Valor da Despesa"
-              keyboardType="numeric"
-              style={{ marginLeft: 10, flex: 1 }}
-              editable={!accordion.isSaved}
-            />
             {accordion.expenseType === ExpenseType.QUANTITY && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  marginLeft: 10,
+              <TypeSelector
+                onValueChange={(value, label) => {
+                  setQuantityMult(Number(value));
+                  updateAccordion(accordion.id, "quantityType", label);
                 }}
-              >
-                <Text style={{ color: "#6B7280", fontSize: 14 }}>
-                  <FontAwesome name="times" size={16} color="#6B7280" />{" "}
-                  {quantityMult}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Text className="mb-2 text-lg font-semibold text-gray-700">
-            Recibo *
-          </Text>
-          <TouchableOpacity
-            onPress={() => handleImageUpload(accordion.id)}
-            disabled={accordion.isSaved}
-            className={`p-3 rounded-lg flex-row items-center justify-center mb-4 ${
-              accordion.isSaved ? "bg-gray-300" : "bg-blue-500"
-            }`}
-          >
-            <Ionicons
-              name="image-outline"
-              size={20}
-              color={accordion.isSaved ? "gray" : "white"}
-            />
-            <Text
-              className={`ml-2 ${
-                accordion.isSaved ? "text-gray-500" : "text-white font-semibold"
-              }`}
-            >
-              {accordion.attachment ? "Alterar Recibo" : "Adicionar Recibo"}
-            </Text>
-          </TouchableOpacity>
-
-          {accordion.attachment && (
-            <View className="mb-6">
-              <MaterialIcons
-                name={expenseType == ExpenseType.VALUE ? "close" : "close"}
-                size={20}
-                color="#FF0000"
-                onPress={removeImage}
+                selectedValue={""}
+                options={quantityOptions}
               />
-              <Image
-                source={{ uri: accordion.attachment || undefined }}
-                style={{ width: 150, height: 150, borderRadius: 8 }}
+            )}
+            <Text className="mb-2 text-lg font-bold">
+              {" "}
+              Descrição {accordion.totalValue > expenseLimit ? "*" : ""}
+            </Text>
+            <View className="flex-row items-center bg-white p-5 rounded-lg border border-[#ccc] mb-4">
+              <Ionicons name="pencil" size={20} color="#6B7280" />
+              <TextInput
+                value={accordion.description}
+                onChangeText={(text) =>
+                  updateAccordion(accordion.id, "description", text)
+                }
+                placeholder="Descreva a razão da despesa"
+                multiline
+                className="ml-2 w-full h-24 text-left"
+                editable={!accordion.isSaved}
               />
             </View>
-          )}
 
-          <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
-            <Text className="text-sm font-bold text-[#6B7280] pb-2">
-              VALOR TOTAL
-            </Text>
-            <Text className="text-4xl font-bold ">
-              {formatCurrency(accordion.totalValue)}
-            </Text>
-          </View>
+            <Text className="mb-2 text-lg font-bold">Valor *</Text>
 
-          {/* Save Accordion | Send to Back  */}
-          <TouchableOpacity
-            className={`w-full p-3 mb-10 rounded-lg ${
-              accordion.isSaved || accordionHasError(accordion)
-                ? "bg-gray-300"
-                : "bg-green-500"
-            }`}
-            onPress={() => saveAccordion(accordion.id)}
-            disabled={accordion.isSaved || accordionHasError(accordion)}
-          >
-            <Text
-              className={`text-center font-bold ${
-                accordion.isSaved || accordionHasError(accordion)
-                  ? "text-gray-500"
-                  : "text-white"
+            {accordion.totalValue > expenseLimit ? (
+              <Text className="text-md pb-2 font-bold text-[#e3be22]">
+                {" "}
+                Você está acima do limite de {expenseLimit}
+              </Text>
+            ) : null}
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                borderColor: "#ccc",
+                marginBottom: 20,
+              }}
+            >
+              <MaterialIcons
+                name={
+                  accordion.expenseType == ExpenseType.VALUE
+                    ? "attach-money"
+                    : "add-box"
+                }
+                size={20}
+                color="#6B7280"
+              />
+              <TextInput
+                value={accordion.inputValue.toString()}
+                onChangeText={(text) =>
+                  updateAccordion(accordion.id, "inputValue", text)
+                }
+                placeholder="Insira o Valor da Despesa"
+                keyboardType="numeric"
+                style={{ marginLeft: 10, flex: 1 }}
+                editable={!accordion.isSaved}
+              />
+              {accordion.expenseType === ExpenseType.QUANTITY && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginLeft: 10,
+                  }}
+                >
+                  <Text style={{ color: "#6B7280", fontSize: 14 }}>
+                    <FontAwesome name="times" size={16} color="#6B7280" />{" "}
+                    {quantityMult}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text className="mb-2 text-lg font-semibold text-gray-700">
+              Recibo *
+            </Text>
+            <TouchableOpacity
+              onPress={() => handleImageUpload(accordion.id)}
+              disabled={accordion.isSaved}
+              className={`p-3 rounded-lg flex-row items-center justify-center mb-4 ${
+                accordion.isSaved ? "bg-gray-300" : "bg-blue-500"
               }`}
             >
-              Salvar Despesa
-            </Text>
-          </TouchableOpacity>
-        </ListItem.Accordion>
-      ))}
+              <Ionicons
+                name="image-outline"
+                size={20}
+                color={accordion.isSaved ? "gray" : "white"}
+              />
+              <Text
+                className={`ml-2 ${
+                  accordion.isSaved
+                    ? "text-gray-500"
+                    : "text-white font-semibold"
+                }`}
+              >
+                {accordion.attachment ? "Alterar Recibo" : "Adicionar Recibo"}
+              </Text>
+            </TouchableOpacity>
 
-      {/* Add Accordion */}
-      <TouchableOpacity
-        className={`w-full p-3 mb-10 rounded-lg ${
-          (expandedAccordionId !== null && !allAccordionsCompleted) ||
-          accordions.some((accordion) => accordion.isSaved == false)
-            ? "bg-gray-300"
-            : "bg-blue-500"
-        }`}
-        onPress={createNewRefund}
-        disabled={accordions.some((accordion) => accordion.isSaved == false)}
-      >
-        <Text
-          className={`text-center font-bold ${
+            {accordion.attachment && (
+              <View className="mb-6">
+                <MaterialIcons
+                  name={expenseType == ExpenseType.VALUE ? "close" : "close"}
+                  size={20}
+                  color="#FF0000"
+                  onPress={removeImage}
+                />
+                <Image
+                  source={{ uri: accordion.attachment || undefined }}
+                  style={{ width: 150, height: 150, borderRadius: 8 }}
+                />
+              </View>
+            )}
+
+            <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
+              <Text className="text-sm font-bold text-[#6B7280] pb-2">
+                VALOR TOTAL
+              </Text>
+              <Text className="text-4xl font-bold ">
+                {formatCurrency(accordion.totalValue)}
+              </Text>
+            </View>
+
+            {/* Save Accordion | Send to Back  */}
+            <TouchableOpacity
+              className={`w-full p-5 mb-10 rounded-lg ${
+                accordion.isSaved || accordionHasError(accordion)
+                  ? "bg-gray-300"
+                  : "bg-green-500"
+              }`}
+              onPress={() => saveAccordion(accordion.id)}
+              disabled={accordion.isSaved || accordionHasError(accordion)}
+            >
+              <Text
+                className={`text-center font-bold ${
+                  accordion.isSaved || accordionHasError(accordion)
+                    ? "text-gray-500"
+                    : "text-white"
+                }`}
+              >
+                Salvar Despesa
+              </Text>
+            </TouchableOpacity>
+          </ListItem.Accordion>
+        ))}
+
+        {/* Add Accordion */}
+        <TouchableOpacity
+          className={`w-full p-5 mb-10 rounded-lg ${
             (expandedAccordionId !== null && !allAccordionsCompleted) ||
             accordions.some((accordion) => accordion.isSaved == false)
-              ? "text-gray-500"
-              : "text-white"
+              ? "bg-gray-300"
+              : "bg-blue-500"
           }`}
-        >
-          {isFirstAction ? "Começar Reembolso" : "Adicionar Despesa"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Submit */}
-      {isFirstAction ? null : (
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={isSubmitDisabled}
-          className={`w-full p-3 mb-10 rounded-lg ${
-            isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
-          }`}
+          onPress={createNewRefund}
+          disabled={accordions.some((accordion) => accordion.isSaved == false)}
         >
           <Text
             className={`text-center font-bold ${
@@ -657,38 +648,60 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 : "text-white"
             }`}
           >
-            Enviar Pedido de Reembolso
+            {isFirstAction ? "Começar Reembolso" : "Adicionar Despesa"}
           </Text>
         </TouchableOpacity>
-      )}
-      {/* Cancel Button */}
-      {!isFirstAction && (
-        <TouchableOpacity
-          onPress={handleCancel}
-          disabled={isCancelDisabled}
-          className={` w-full p-3 mb-10 rounded-lg mr-2 ${
-            isCancelDisabled ? "bg-gray-300" : "bg-red-500"
-          }`}
-        >
-          <Text
-            className={`text-center font-bold ${
-              isCancelDisabled ? "text-gray-500" : "text-white"
+
+        {/* Submit */}
+        {isFirstAction ? null : (
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={isSubmitDisabled}
+            className={`w-full p-5 mb-10 rounded-lg ${
+              isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
             }`}
           >
-            Cancelar
-          </Text>
-        </TouchableOpacity>
-      )}
+            <Text
+              className={`text-center font-bold ${
+                (expandedAccordionId !== null && !allAccordionsCompleted) ||
+                accordions.some((accordion) => accordion.isSaved == false)
+                  ? "text-gray-500"
+                  : "text-white"
+              }`}
+            >
+              Enviar Pedido de Reembolso
+            </Text>
+          </TouchableOpacity>
+        )}
+        {/* Cancel Button */}
+        {!isFirstAction && (
+          <TouchableOpacity
+            onPress={handleCancel}
+            disabled={isCancelDisabled}
+            className={` w-full p-5 mb-10 rounded-lg mr-2 ${
+              isCancelDisabled ? "bg-gray-300" : "bg-red-500"
+            }`}
+          >
+            <Text
+              className={`text-center font-bold ${
+                isCancelDisabled ? "text-gray-500" : "text-white"
+              }`}
+            >
+              Cancelar
+            </Text>
+          </TouchableOpacity>
+        )}
 
-      {/* Voltar */}
-      {isFirstAction && (
-        <TouchableOpacity
-          onPress={onClose}
-          className={`w-full p-3 mb-10 rounded-lg bg-orange-600`}
-        >
-          <Text className={`text-center font-bold text-white`}>Voltar</Text>
-        </TouchableOpacity>
-      )}
+        {/* Voltar */}
+        {isFirstAction && (
+          <TouchableOpacity
+            onPress={onClose}
+            className={`w-full p-5  rounded-lg bg-orange-600`}
+          >
+            <Text className={`text-center font-bold text-white`}>Voltar</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </ScrollView>
   );
 };

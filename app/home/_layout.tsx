@@ -3,10 +3,9 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 
 import "../global.css";
-import { Text, useColorScheme, View } from "react-native";
+import { Text, View } from "react-native";
 
 export default function RootLayout() {
-  const theme = useColorScheme();
   const router = useRouter();
   const segments = useSegments();
   const currentRoute =
@@ -14,8 +13,8 @@ export default function RootLayout() {
 
   const getTitle = (route: string) => {
     switch (route) {
-      case "index":
-        return "Bem-Vindo ao ExpenseFlow";
+      case "home":
+        return "Olá, Usuário";
       case "refund_list":
         return "Lista de Reembolsos";
       case "refund_request":
@@ -30,13 +29,13 @@ export default function RootLayout() {
     <View className="flex-1">
       <View className="p-4 h-1/5 bg-[#FF8C00] flex ">
         {/* Header with logo and theme toggle button */}
-        <View
-          className="flex flex-row items-center justify-between mb-2 pt-6"
-          onTouchStart={() => {
-            router.push("/settings/account_settings");
-          }}
-        >
-          <View className="w-14 h-14 rounded-full bg-white flex justify-center items-center">
+        <View className="flex flex-row items-center justify-between mb-2 pt-6">
+          <View
+            className="w-14 h-14 rounded-full bg-white flex justify-center items-center"
+            onTouchStart={() => {
+              router.push("/settings/account_settings");
+            }}
+          >
             <Text className="text-[#FF8C00]  font-bold">EF</Text>
           </View>
           <View className="flex flex-row items-end justify-end gap-5 w-1/2">
@@ -53,8 +52,9 @@ export default function RootLayout() {
           </View>
         </View>
         {/* Title and subtitle */}
-        <View className="flex flex-row items-center justify-between mb-2">
+        <View className="flex flex-col items-start justify-between mb-2">
           <Text className="text-white text-2xl font-bold">{title}</Text>
+          <Text className="text-white text-md font-bold">{title}</Text>
         </View>
       </View>
       <Tabs
@@ -83,12 +83,12 @@ export default function RootLayout() {
           tabBarActiveTintColor: "#FF8C00",
           tabBarInactiveTintColor: "gray",
           tabBarStyle: {
-            backgroundColor: theme === "dark" ? "#222" : "#fff",
+            backgroundColor: "#fff",
             height: 70,
             paddingBottom: 10,
             paddingTop: 10,
             borderTopWidth: 1,
-            borderTopColor: theme === "dark" ? "#444" : "#ddd",
+            borderTopColor: "#ddd",
           },
           headerShown: false,
           tabBarLabelStyle: {
