@@ -1,7 +1,8 @@
 // REFUND LIST SCREEN
 import { FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
 import ProjectService from "@/services/projectService";
 import { formatCurrency } from "@/utils/formmatters";
@@ -29,23 +30,24 @@ export default function RefundList() {
     setDisplayYear(displayYear + 1);
   }
 
-  useEffect(() => {
-    const fetchRefunds = async () => {
-      try {
-        const response = await _refundService.getRefunds(
-          displayMonth.toString(),
-          displayYear.toString()
-        );
-        // console.log("Refunds:", response);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRefunds = async () => {
+        try {
+          const response = await _refundService.getRefunds(
+            displayMonth.toString(),
+            displayYear.toString()
+          );
 
-        setRefunds(response);
-      } catch (error) {
-        console.error("Error fetching refunds:", error);
-      }
-    };
+          setRefunds(response);
+        } catch (error) {
+          console.error("Error fetching refunds:", error);
+        }
+      };
 
-    fetchRefunds();
-  }, [displayMonth, displayYear]);
+      fetchRefunds();
+    }, [displayMonth, displayYear])
+  );
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -249,6 +251,119 @@ export default function RefundList() {
       </View>
 
       {/* Refunds List */}
+      <View className="flex-row justify-between space-x-4 mb-4">
+        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+          <View className="flex-1">
+            <Text>
+              <Text style={{ fontWeight: "bold" }}>
+              Total de Reembolsos {months[displayMonth - 1]}:{" "}
+              {refunds.filter((refund) =>
+              refund.date.startsWith(
+              `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+              )
+              ).length}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "green" }}>
+              Aprovados:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "approved"
+              ).length
+              }
+              </Text>
+              {"\n"}
+              <Text>
+              Em Processo:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "in-process"
+              ).length
+              }
+              </Text>
+              {"\n"}
+              <Text style={{ color: "red" }}>
+              Rejeitados:{" "}
+              {
+              refunds.filter(
+              (refund) =>
+                refund.date.startsWith(
+                `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                ) && refund.status === "rejected"
+              ).length
+              }
+              </Text>
+            </Text>
+            </View>
+        </View>
+
+        <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-2">
+            <View className="flex-1">
+            <Text>
+              <Text style={{ fontWeight: "bold" }}>
+              Total a Receber {months[displayMonth - 1]}:{" "}
+              {formatCurrency(
+                refunds
+                .filter((refund) =>
+                  refund.date.startsWith(
+                  `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  )
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "green" }}>
+              Aprovados:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "approved"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text>
+              Em Processo:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "in-process"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+              {"\n"}
+              <Text style={{ color: "red" }}>
+              Rejeitados:{" "}
+              {formatCurrency(
+                refunds
+                .filter(
+                  (refund) =>
+                  refund.date.startsWith(
+                    `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
+                  ) && refund.status === "rejected"
+                )
+                .reduce((sum, refund) => sum + refund.totalValue, 0)
+              )}
+              </Text>
+            </Text>
+            </View>
+        </View>
+      </View>
       <FlatList
         data={refunds
           .filter((refund) =>
