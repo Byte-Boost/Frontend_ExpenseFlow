@@ -1,14 +1,14 @@
 import ExpenseForm from "@/components/ExpenseForm";
 import {
-  FlatList,
   Text,
   TouchableOpacity,
   View,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
-
 import { useEffect, useState } from "react";
 import ProjectService from "@/services/projectService";
+import { Ionicons } from "@expo/vector-icons";
 
 const _projectService = new ProjectService();
 
@@ -30,50 +30,49 @@ const RefundRequestScreen = () => {
       console.error("Error fetching projects:", error);
     }
   };
+
   useEffect(() => {
     fetchProjects();
   }, []);
 
   if (!projects) {
     return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-lg ">Carregando projetos...</Text>
+      <View className="flex-1 justify-center items-center ">
+        <ActivityIndicator size="large" color="#FF8C00" />
       </View>
     );
   }
 
   return (
-    <ScrollView className="p-5 bg-gray-50 h-full">
-      <Text className="text-2xl font-bold text-center mb-6">
-        Pedido de Reembolso
-      </Text>
-      <View>
-        <View className="grid grid-cols-3 gap-4">
-          {!selectedProject &&
-            projects.map((project: Project, index: number) => (
-              <View
-                key={index}
-                className="border p-4 rounded-lg border-gray-500"
+    <ScrollView className=" flex-1 px-6 py-8">
+      <View className="grid grid-cols-1 gap-4">
+        {!selectedProject &&
+          projects.map((project: Project, index: number) => (
+            <View
+              key={index}
+              className="bg-white rounded-lg shadow-md p-5 border-l-4 border-l-[#FF8C00]"
+            >
+              <TouchableOpacity
+                onPress={() => setSelectedProject(project.id)}
+                className="flex-1  flex flex-row items-center justify-between"
               >
-                <TouchableOpacity
-                  onPress={() => setSelectedProject(project.id)}
-                  className="flex-1 justify-center items-center"
-                >
-                  <Text className="text-lg font-semibold">{project.name}</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          {selectedProject && (
-            <ExpenseForm
-              projectId={selectedProject}
-              projectName={
-                projects.find((project) => project.id === selectedProject)
-                  ?.name || "Unknown Project"
-              }
-              onClose={() => setSelectedProject(null)}
-            />
-          )}
-        </View>
+                <Text className="text-xl font-semibold text-[#333333]">
+                  {project.name}
+                </Text>
+                <Ionicons name="folder" size={24} color="#FF8C00" />
+              </TouchableOpacity>
+            </View>
+          ))}
+        {selectedProject && (
+          <ExpenseForm
+            projectId={selectedProject}
+            projectName={
+              projects.find((project) => project.id === selectedProject)
+                ?.name || "Unknown Project"
+            }
+            onClose={() => setSelectedProject(null)}
+          />
+        )}
       </View>
     </ScrollView>
   );
