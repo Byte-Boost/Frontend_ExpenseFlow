@@ -38,7 +38,7 @@ const RefundRequestScreen = () => {
   if (!projects) {
     return (
       <View className="flex-1 justify-center items-center ">
-        <ActivityIndicator size="large" color="#6A4C9C" />
+        <ActivityIndicator size="large" color="#FF8C00" />
       </View>
     );
   }

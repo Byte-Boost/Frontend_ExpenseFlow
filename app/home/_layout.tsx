@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 
 import "../global.css";
-import { Text, View } from "react-native";
+import { Text, Touchable, TouchableOpacity, View } from "react-native";
 import { jwtDecode } from "jwt-decode";
 
 type MyJwtPayload = {
@@ -108,9 +108,9 @@ export default function RootLayout() {
       <View className="p-4 h-1/5 bg-[#FF8C00] flex ">
         {/* Header with logo and theme toggle button */}
         <View className="flex flex-row items-center justify-between mb-2 pt-6">
-          <View
+          <TouchableOpacity
             className="w-14 h-14 rounded-full bg-white flex justify-center items-center"
-            onTouchStart={() => {
+            onPress={() => {
               router.push("/settings/account_settings");
             }}
           >
@@ -118,7 +118,7 @@ export default function RootLayout() {
               {(username?.charAt(0)?.toUpperCase() || "") +
                 (username?.charAt(1)?.toUpperCase() || "")}
             </Text>
-          </View>
+          </TouchableOpacity>
           <View className="flex flex-row items-end justify-end gap-5 w-1/2">
             {/* <Ionicons
               name={theme === "dark" ? "sunny" : "moon"}

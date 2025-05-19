@@ -57,6 +57,10 @@ export default function Index() {
         "error"
       );
     });
+    if (response === undefined) {
+      showAlert("Oops!", response.error, "error");
+      return;
+    }
     if (response.token === undefined) {
       showAlert("Oops!", response.error, "error");
       return;
