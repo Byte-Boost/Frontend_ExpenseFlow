@@ -201,9 +201,9 @@ export default function Home() {
             </TouchableOpacity>
           </View>
         </View>
-        <View className="bg-white w-full h-1/4 flex rounded-lg mt-5 shadow-md border-l-4 border-l-[#FF8C00]">
+        <View className="bg-white w-full h-2/6 flex flex-col rounded-lg mt-7 shadow-md border-l-4 border-l-[#FF8C00]">
           {/* Total Refunds Section */}
-            {selectedTotal === "quantity" && (
+            {selectedTotal === "value" && (
               <View className="flex-1 flex-col rounded-xl px-4 py-2 ml-3">
                 <View className="flex flex-col items-start">
                   <Text className="text-xl pb-2 flex-row items-center">
@@ -315,7 +315,7 @@ export default function Home() {
             )}
       
             {/* Total Value Section */}
-            {selectedTotal === "value" && (
+            {selectedTotal === "quantity" && (
               <View className="flex-1 flex-col rounded-xl px-4 py-2 ml-3">
                 <View className="flex flex-col items-start">
                   <Text className="text-xl pb-2 flex-row items-center">
@@ -429,9 +429,9 @@ export default function Home() {
               </View>
             )}
         </View>
-        <View className="bg-white w-full h-1/6 flex rounded-lg mt-12 shadow-md p-5 border-l-4 border-l-[#FF8C00]">
+        {/* <View className="bg-white w-full h-1/6 flex rounded-lg mt-12 shadow-md p-5 border-l-4 border-l-[#FF8C00]">
             
-        </View>
+        </View> */}
       </View>
     </View>
   );
