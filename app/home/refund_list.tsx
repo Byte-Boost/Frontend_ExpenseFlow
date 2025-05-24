@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from 'expo-router';
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
@@ -142,9 +143,22 @@ export default function RefundList() {
 
   const renderItem = ({ item }: { item: RefundItem }) => (
     <TouchableOpacity
-      className={`p-4 bg-white mb-2 rounded-lg shadow-md border-l-4 ${
-        sideColors[item.status]
-      }`}
+      className={`p-4 bg-white mb-2 rounded-lg shadow-md border-l-4 ${sideColors[item.status]}`}
+      onPress={() =>
+        router.push({
+          pathname: '/refund/refund_details',
+          params: {
+            id: item.id,
+            status: item.status,
+            // descricao: item.projectId,
+            totalValue: String(item.totalValue),
+            date: item.date,
+            projectName: items.find((project) => project.value === item.projectId)?.label ||
+            "",
+            projectId: item.projectId,
+          },
+        })
+      }
     >
       <View className="flex-row items-center">
         <Text className="text-gray-600">

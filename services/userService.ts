@@ -8,4 +8,8 @@ export default class UserService {
     });
     return response.data;
   }
+  public async getUserById(id: number) {
+    const response = await api.get(`/user/${id}`);
+    return response.data;
+  }
 }
