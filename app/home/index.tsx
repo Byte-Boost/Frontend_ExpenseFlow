@@ -229,7 +229,7 @@ export default function Home() {
                   colors[lastRefundData?.status || "in-process"]
                 } pb-5`}
               >
-                <FontAwesome5 name="plus-circle" size={55} />
+                <Ionicons name="add-circle" size={55} />
               </Text>
             </TouchableOpacity>
           </View>
@@ -240,9 +240,8 @@ export default function Home() {
           months={months}
           displayMonth={displayMonth}
           displayYear={displayYear}
-          refunds={refunds}
           reverseTotalType={true}
-          containerClassName="bg-white w-full h-2/6 flex flex-col rounded-lg mt-7 shadow-md border-l-4 border-l-[#FF8C00]"
+          containerClassName="bg-white w-full h-[45%] flex flex-col rounded-lg mt-7 shadow-md border-l-4 border-l-[#FF8C00]"
         />
         {/* <View className="bg-white w-full h-1/6 flex rounded-lg mt-12 shadow-md p-5 border-l-4 border-l-[#FF8C00]">
             

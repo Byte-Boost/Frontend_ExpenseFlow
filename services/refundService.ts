@@ -75,4 +75,17 @@ export default class RefundService {
     });
     return response.data;
   }
+  public async getSummary(displayMonth: string = "", displayYear: string = "") {
+    const response = await api.get("/refund/summary", {
+      params: {
+        periodStart: `${displayYear}-${displayMonth
+          .toString()
+          .padStart(2, "0")}-01`,
+        periodEnd: `${displayYear}-${displayMonth
+          .toString()
+          .padStart(2, "0")}-31`,
+      },
+    });
+    return response.data;
+  }
 }

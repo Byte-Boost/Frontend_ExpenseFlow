@@ -1,30 +1,72 @@
+import RefundService from "@/services/refundService";
 import { formatCurrency } from "@/utils/formmatters";
 import { Ionicons } from "@expo/vector-icons";
-import { Text, View } from "react-native";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
 interface RefundInfoProps {
   selectedTotal: string | null;
   months: string[];
   displayMonth: number;
   displayYear: number;
-  refunds: {
-    date: string;
-    status: string;
-    totalValue: number;
-  }[];
   containerClassName?: string;
   reverseTotalType?: boolean;
 }
+
+const _refundService = new RefundService();
 
 const RefundInfo = ({
   selectedTotal,
   months,
   displayMonth,
   displayYear,
-  refunds,
   containerClassName = "flex-row justify-between mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-r-4 border-[#FF8C00]",
   reverseTotalType = false,
 }: RefundInfoProps) => {
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [approvedValue, setApprovedValue] = useState(0);
+
+  const [inProcessCount, setInProcessCount] = useState(0);
+  const [inProcessValue, setInProcessValue] = useState(0);
+
+  const [rejectedCount, setRejectedCount] = useState(0);
+  const [rejectedValue, setRejectedValue] = useState(0);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const fetchSummary = async () => {
+    try {
+      let data = await _refundService.getSummary(
+        displayMonth.toString(),
+        displayYear.toString()
+      );
+      setApprovedCount(data["approved"].quantity);
+      setApprovedValue(data["approved"].totalValue);
+
+      setInProcessCount(data["in-process"].quantity);
+      setInProcessValue(data["in-process"].totalValue);
+
+      setRejectedCount(data["rejected"].quantity);
+      setRejectedValue(data["rejected"].totalValue);
+
+      setTotalQuantity(data.totalQuantity);
+      setTotalValue(data.totalValue);
+    } catch (e) {
+      console.error("Error fetching summary:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSummary();
+    }, [displayMonth, displayYear])
+  );
+
   let displayTotal = selectedTotal;
   if (reverseTotalType) {
     if (selectedTotal === "quantity") displayTotal = "value";
@@ -32,228 +74,125 @@ const RefundInfo = ({
   }
   return (
     <View className={containerClassName}>
+      {isLoading && (
+        <View className="flex-1 justify-center items-center ">
+          <ActivityIndicator size="large" color="#FF8C00" />
+        </View>
+      )}
       {/* Total Refunds Section */}
-      {displayTotal === "quantity" && (
-        <View className="flex-1 flex-col items-center rounded-xl px-4 py-2">
-          <View className="flex flex-col items-start">
-            <Text className="font-bold text-xl pb-2 flex-row items-center">
-              <Text>
-                Reembolsos de {months[displayMonth - 1]} {displayYear}
-              </Text>
+      {displayTotal === "quantity" && !isLoading && (
+        <View className="flex-1   p-4 ">
+          {/* Header */}
+          <Text className="text-lg font-bold text-black">
+            Quantidade de Reembolsos
+          </Text>
+          <Text className="text-sm text-gray-500 mb-3">
+            ({months[displayMonth - 1]} {displayYear})
+          </Text>
+
+          <View className="border-b border-gray-300 mb-3" />
+
+          {/* Total */}
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-base font-bold text-black">TOTAL</Text>
+            <Text className="text-lg font-bold text-black">
+              {totalQuantity}
             </Text>
+          </View>
 
-            {/* Total Count Section */}
+          {/* Approved */}
+          <View className="flex-row justify-between items-center mb-3">
             <View className="flex-row items-center">
-              <Ionicons
-                name="calculator"
-                size={24}
-                color="black"
-                className="mr-2"
-              />
-              <Text className="font-semibold text-lg">
-                TOTAL:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter((refund) =>
-                      refund.date.startsWith(
-                        `${displayYear}-${displayMonth
-                          .toString()
-                          .padStart(2, "0")}`
-                      )
-                    ).length
-                  }
-                </Text>
+              <Ionicons name="checkmark-circle" size={24} color="green" />
+              <Text className="ml-2 text-green-700 font-semibold">
+                APROVADOS
               </Text>
             </View>
+            <Text className="text-black font-bold">{approvedCount}</Text>
+          </View>
 
-            {/* Aprovados (Approved) Section */}
+          {/* In Process */}
+          <View className="flex-row justify-between items-center mb-3">
             <View className="flex-row items-center">
-              <Ionicons
-                name="checkmark-circle-sharp"
-                size={26}
-                color="green"
-                className="mr-2"
-              />
-              <Text className="font-semibold text-green-500 text-lg">
-                APROVADOS:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "approved"
-                    ).length
-                  }
-                </Text>
+              <Ionicons name="hourglass" size={24} color="blue" />
+              <Text className="ml-2 text-blue-600 font-semibold">
+                EM PROCESSAMENTO
               </Text>
             </View>
+            <Text className="text-black font-bold">{inProcessCount}</Text>
+          </View>
 
-            {/* Em Processamento (In-process) Section */}
+          {/* Rejected */}
+          <View className="flex-row justify-between items-center">
             <View className="flex-row items-center">
-              <Ionicons
-                name="hourglass-sharp"
-                size={26}
-                color="blue"
-                className="mr-2"
-              />
-              <Text className="text-blue-500 text-lg ">
-                EM PROCESSAMENTO:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "in-process"
-                    ).length
-                  }
-                </Text>
+              <Ionicons name="close-circle" size={24} color="red" />
+              <Text className="ml-2 text-red-600 font-semibold">
+                REJEITADOS
               </Text>
             </View>
-
-            {/* Rejeitados (Rejected) Section */}
-            <View className="flex-row items-center">
-              <Ionicons
-                name="close-circle-sharp"
-                size={26}
-                color="red"
-                className="mr-2"
-              />
-              <Text className="font-semibold text-red-500 text-lg">
-                REJEITADOS:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "rejected"
-                    ).length
-                  }
-                </Text>
-              </Text>
-            </View>
+            <Text className="text-black font-bold">{rejectedCount}</Text>
           </View>
         </View>
       )}
-
       {/* Total Value Section */}
       {displayTotal === "value" && (
-        <View className="flex-1 flex-col items-center rounded-xl px-4 py-2">
-          <View className="flex items-start">
-            <Text className="font-bold text-xl pb-2 flex-row items-center">
-              <Text>
-                Reembolsos de {months[displayMonth - 1]} {displayYear}
-              </Text>
+        <View className="flex-1  p-4 ">
+          {/* Header */}
+          <Text className="text-lg font-bold text-black">
+            Valores de Reembolsos
+          </Text>
+          <Text className="text-sm text-gray-500 mb-3">
+            ({months[displayMonth - 1]} {displayYear})
+          </Text>
+
+          <View className="border-b border-gray-300 mb-3" />
+
+          {/* Total to Receive */}
+          <View className="flex-row justify-between items-center mb-4">
+            <View className="flex-row items-center">
+              <Text className="ml-2 text-lg font-bold text-black">TOTAL</Text>
+            </View>
+            <Text className="text-lg text-black font-bold">
+              {formatCurrency(totalValue)}
             </Text>
-            <Text>
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="cash-outline"
-                  size={24}
-                  color="black"
-                  className="mr-2"
-                />
-                <Text className="font-semibold text-lg">
-                  Total a Receber :{" "}
-                  {formatCurrency(
-                    refunds
-                      .filter((refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        )
-                      )
-                      .reduce((sum, refund) => sum + refund.totalValue, 0)
-                  )}
-                </Text>
-              </View>
-              {"\n"}
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="checkmark-circle-sharp"
-                  size={24}
-                  color="green"
-                  className="mr-2"
-                />
-                <Text className=" text-lg text-green-500">
-                  APROVADOS:{" "}
-                  <Text className="text-black font-bold text-lg ">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "approved"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
-                  </Text>
-                </Text>
-              </View>
-              {"\n"}
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="hourglass-sharp"
-                  size={24}
-                  color="blue"
-                  className="mr-2"
-                />
-                <Text className="text-blue-500 text-lg">
-                  EM PROCESSO:{" "}
-                  <Text className="text-black font-bold">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "in-process"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
-                  </Text>
-                </Text>
-              </View>
-              {"\n"}
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="close-circle-sharp"
-                  size={24}
-                  color="red"
-                  className="mr-2"
-                />
-                <Text className="text-red-500 text-lg">
-                  REJEITADOS:{" "}
-                  <Text className="text-black font-bold">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "rejected"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
-                  </Text>
-                </Text>
-              </View>
+          </View>
+
+          {/* Approved */}
+          <View className="flex-row justify-between items-center mb-3">
+            <View className="flex-row items-center">
+              <Ionicons name="checkmark-circle" size={24} color="green" />
+              <Text className="ml-2 text-green-700 font-semibold">
+                APROVADOS
+              </Text>
+            </View>
+            <Text className="text-black font-bold">
+              {formatCurrency(approvedValue)}
+            </Text>
+          </View>
+
+          {/* In Process */}
+          <View className="flex-row justify-between items-center mb-3">
+            <View className="flex-row items-center">
+              <Ionicons name="hourglass" size={24} color="blue" />
+              <Text className="ml-2 text-blue-600 font-semibold">
+                EM PROCESSO
+              </Text>
+            </View>
+            <Text className="text-black font-bold">
+              {formatCurrency(inProcessValue)}
+            </Text>
+          </View>
+
+          {/* Rejected */}
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center">
+              <Ionicons name="close-circle" size={24} color="red" />
+              <Text className="ml-2 text-red-600 font-semibold">
+                REJEITADOS
+              </Text>
+            </View>
+            <Text className="text-black font-bold">
+              {formatCurrency(rejectedValue)}
             </Text>
           </View>
         </View>

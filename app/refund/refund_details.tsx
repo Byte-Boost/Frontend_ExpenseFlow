@@ -121,11 +121,11 @@ export default function RefundDetails() {
             <Text
               className={`font-semibold px-2 py-1 rounded-full w-fit ${
                 formattedStatus === "in process"
-                  ? "bg-blue-200 text-blue-800"
+                  ? "bg-cyan-100 text-cyan-500"
                   : formattedStatus === "approved"
-                  ? "bg-green-200 text-green-800"
+                  ? "bg-green-200 text-green-500"
                   : formattedStatus === "rejected"
-                  ? "bg-red-200 text-red-800"
+                  ? "bg-red-200 text-red-500"
                   : "bg-gray-200 text-gray-800"
               }`}
             >
