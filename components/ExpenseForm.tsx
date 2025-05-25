@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { formatCurrency } from "@/utils/formmatters";
@@ -50,6 +51,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [refundLimit, setRefundLimit] = useState(0);
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isFirstAction, setIsFirstAction] = useState(true);
 
@@ -204,6 +208,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   };
 
   const saveAccordion = async (id: number) => {
+    setIsSubmitting(true);
     const accordion = accordions.find((accordion) => accordion.id === id);
     if (!accordion) {
       Alert.alert("Erro", "Accordion não encontrado.");
@@ -214,6 +219,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       accordion;
 
     if (accordionHasError(accordion)) {
+      setIsSubmitting(false);
       Alert.alert(
         "Aviso",
         "Preencha todos os campos obrigatórios antes de salvar."
@@ -222,6 +228,8 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     }
     try {
       if (!attachment) {
+        setIsSubmitting(false);
+
         Alert.alert("Erro", "Anexo de recibo não encontrado.");
         return;
       }
@@ -229,6 +237,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         encoding: FileSystem.EncodingType.Base64,
       });
       if (!refund) {
+        setIsSubmitting(false);
         Alert.alert("Erro", "Reembolso não encontrado.");
         return;
       }
@@ -242,7 +251,10 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       );
       updateAccordion(id, "isSaved", true);
       updateAccordion(id, "expenseId", expenseId);
+      Alert.alert("Sucesso", "Despesa salva com sucesso!");
+      setIsSubmitting(false);
     } catch (err) {
+      setIsSubmitting(false);
       console.log(err);
       Alert.alert("Erro", "Erro ao salvar a despesa.");
     }
@@ -302,14 +314,18 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     if (isFirstAction || refund == null) {
       Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
+      setIsSubmitting(false);
       return;
     }
     await _refundService.closeRefund(refund.id).then(() => {
       setAccordions([]);
       setExpandedAccordionId(null);
       setIsFirstAction(true);
+      setIsSubmitting(false);
+      Alert.alert("Sucesso", "Pedido de reembolso enviado com sucesso!");
     });
   };
 
@@ -635,40 +651,17 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               </View>
             )}
 
-            <View
-              className={`bg-[#f0f0f0] p-4 rounded-lg mb-6 ${
-                currentRefundTotal > refundLimit
-                  ? "border-red-600  border-4"
-                  : ""
-              }`}
-            >
+            <View className={`bg-[#f0f0f0] p-4 rounded-lg mb-6 `}>
               <View className="flex-row items-center justify-between">
                 <Text className="text-sm text-left font-bold text-[#6B7280] pb-2">
                   VALOR TOTAL
                 </Text>
-                {currentRefundTotal > refundLimit ? (
-                  <Ionicons name="warning" size={20} color="red" />
-                ) : null}
               </View>
-              <Text
-                className={`text-4xl font-bold ${
-                  currentRefundTotal > refundLimit
-                    ? "text-red-600"
-                    : "text-black"
-                }`}
-              >
+              <Text className={`text-4xl font-bold ${"text-black"}`}>
                 {formatCurrency(accordion.totalValue)}
               </Text>
             </View>
-            {currentRefundTotal > refundLimit ? (
-              <View className="flex-row items-center mb-4">
-                {<Ionicons name="warning" size={20} color="red" />}
-                <Text className="text-lg m-4 font-bold text-red-500">
-                  {" Você está acima do limite de "}
-                  {formatCurrency(refundLimit)}
-                </Text>
-              </View>
-            ) : null}
+
             {/* Save Accordion | Send to Back  */}
             <TouchableOpacity
               className={`w-full p-5 mb-10 rounded-lg ${
@@ -679,15 +672,21 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               onPress={() => saveAccordion(accordion.id)}
               disabled={accordion.isSaved || accordionHasError(accordion)}
             >
-              <Text
-                className={`text-center font-bold ${
-                  accordion.isSaved || accordionHasError(accordion)
-                    ? "text-gray-500"
-                    : "text-white"
-                }`}
-              >
-                Salvar Despesa
-              </Text>
+              {isSubmitting && !allAccordionsCompleted ? (
+                <View className="flex-1 justify-center items-center ">
+                  <ActivityIndicator size="large" color="black" />
+                </View>
+              ) : (
+                <Text
+                  className={`text-center font-bold ${
+                    accordion.isSaved || accordionHasError(accordion)
+                      ? "text-gray-500"
+                      : "text-white"
+                  }`}
+                >
+                  Salvar Despesa
+                </Text>
+              )}
             </TouchableOpacity>
           </ListItem.Accordion>
         ))}
@@ -703,6 +702,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
           onPress={createNewRefund}
           disabled={accordions.some((accordion) => accordion.isSaved == false)}
         >
+          {isSubmitting && <></>}
           <Text
             className={`text-center font-bold ${
               (expandedAccordionId !== null && !allAccordionsCompleted) ||
@@ -716,6 +716,37 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         </TouchableOpacity>
 
         {/* Submit */}
+        <View
+          className={`bg-[#f0f0f0] p-4 rounded-lg mb-6 ${
+            currentRefundTotal > refundLimit ? "border-red-600  border-4" : ""
+          }`}
+        >
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm text-left font-bold text-[#6B7280] pb-2">
+              VALOR TOTAL DE TODAS AS DESPESAS
+            </Text>
+            {currentRefundTotal > refundLimit ? (
+              <Ionicons name="warning" size={25} color="red" />
+            ) : null}
+          </View>
+          <Text
+            className={`text-4xl font-bold ${
+              currentRefundTotal > refundLimit ? "text-red-600" : "text-black"
+            }`}
+          >
+            {formatCurrency(currentRefundTotal)}
+          </Text>
+        </View>
+        {currentRefundTotal > refundLimit ? (
+          <View className="flex-row items-center mb-4">
+            {<Ionicons name="warning" size={20} color="red" />}
+            <Text className="text-lg m-4 font-bold text-red-500">
+              {" Você está acima do limite de "}
+              {formatCurrency(refundLimit)}
+              {" para este reembolso."}
+            </Text>
+          </View>
+        ) : null}
         {isFirstAction ? null : (
           <TouchableOpacity
             onPress={handleSubmit}
@@ -724,16 +755,22 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
             }`}
           >
-            <Text
-              className={`text-center font-bold ${
-                (expandedAccordionId !== null && !allAccordionsCompleted) ||
-                accordions.some((accordion) => accordion.isSaved == false)
-                  ? "text-gray-500"
-                  : "text-white"
-              }`}
-            >
-              Enviar Pedido de Reembolso
-            </Text>
+            {isSubmitting && allAccordionsCompleted ? (
+              <View className="flex-1 justify-center items-center ">
+                <ActivityIndicator size="large" color="black" />
+              </View>
+            ) : (
+              <Text
+                className={`text-center font-bold ${
+                  (expandedAccordionId !== null && !allAccordionsCompleted) ||
+                  accordions.some((accordion) => accordion.isSaved == false)
+                    ? "text-gray-500"
+                    : "text-white"
+                }`}
+              >
+                Enviar Pedido de Reembolso
+              </Text>
+            )}
           </TouchableOpacity>
         )}
         {/* Cancel Button */}
