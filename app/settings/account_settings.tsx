@@ -44,7 +44,7 @@ export default function AccountSettings() {
     router.back();
   };
   return (
-    <View className="flex-1 bg-[#F5F5F5]">
+    <View className="flex-1 bg-white">
       <View className="p-4 flex-row items-center justify-between bg-[#FF8C00]">
         <TouchableOpacity onPress={handleBack} className="p-2">
           <Ionicons name="arrow-back" size={24} color="white" />
@@ -66,36 +66,38 @@ export default function AccountSettings() {
         </Text>
       </View>
 
-      {/* Settings Options */}
+      {/* About */}
       <View className="flex-1 pt-7 px-6">
+        {/* About Button */}
         <TouchableOpacity
-          className="p-5 bg-white border-b-2 border-[#FF8C00] rounded-lg shadow-lg"
-          onPress={() => {
-            // router.push("/settings/personal_data");
-          }}
+          onPress={() => router.push("/settings/about")}
+          activeOpacity={0.85}
+          className="flex-row items-center justify-center p-5 rounded-xl border-2 border-[#FF8C00] bg-[#FF8C00] mb-4 shadow"
         >
-          <Text className="text-[#333333] font-medium text-lg">
-            Dados Pessoais
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="p-5 bg-white border-b-2 border-[#FF8C00] rounded-lg shadow-lg mt-3"
-          onPress={() => {
-            // router.push("/settings/about");
-          }}
-        >
-          <Text className="text-[#333333] font-medium text-lg">
+          <Ionicons
+            name="information-circle-outline"
+            size={33}
+            color="white"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-white font-bold text-xl text-center">
             Sobre o Aplicativo
           </Text>
         </TouchableOpacity>
 
         {/* Log-out Button */}
         <TouchableOpacity
-          className="p-5 bg-white border-b-2 border-red-700 rounded-lg shadow-lg mt-6"
           onPress={handleLogout}
+          activeOpacity={0.85}
+          className="flex-row items-center justify-center p-5 rounded-xl border-2 border-red-600 bg-red-500 shadow"
         >
-          <Text className="text-red-700 font-bold text-lg">Sair</Text>
+          <Ionicons
+            name="exit-outline"
+            size={33}
+            color="white"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-white font-bold text-xl text-center">Sair</Text>
         </TouchableOpacity>
       </View>
     </View>

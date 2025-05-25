@@ -314,8 +314,8 @@ export default function RefundList() {
                           color: "#9EA0A4",
                         }}
                         items={[
-                          { label: "Em processo", value: "in-process" },
                           { label: "Aprovado", value: "approved" },
+                          { label: "Em processamento", value: "in-process" },
                           { label: "Rejeitado", value: "rejected" },
                         ]}
                         useNativeAndroidPickerStyle={false}
