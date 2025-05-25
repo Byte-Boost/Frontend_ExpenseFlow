@@ -54,10 +54,10 @@ const RefundInfo = ({
 
       setTotalQuantity(data.totalQuantity);
       setTotalValue(data.totalValue);
-
-      setIsLoading(false);
     } catch (e) {
       console.error("Error fetching summary:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
