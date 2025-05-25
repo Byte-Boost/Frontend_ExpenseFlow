@@ -69,20 +69,9 @@ export default function AccountSettings() {
       {/* Settings Options */}
       <View className="flex-1 pt-7 px-6">
         <TouchableOpacity
-          className="p-5 bg-white border-b-2 border-[#FF8C00] rounded-lg shadow-lg"
-          onPress={() => {
-            // router.push("/settings/personal_data");
-          }}
-        >
-          <Text className="text-[#333333] font-medium text-lg">
-            Dados Pessoais
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           className="p-5 bg-white border-b-2 border-[#FF8C00] rounded-lg shadow-lg mt-3"
           onPress={() => {
-            // router.push("/settings/about");
+            router.push("/settings/about");
           }}
         >
           <Text className="text-[#333333] font-medium text-lg">
