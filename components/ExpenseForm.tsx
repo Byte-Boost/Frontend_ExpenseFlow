@@ -256,7 +256,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       console.log(err);
       Alert.alert("Erro", "Erro ao salvar a despesa.");
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingRefund(false);
     }
   };
 
