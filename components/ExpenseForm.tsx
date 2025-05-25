@@ -232,13 +232,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         Alert.alert("Erro", "Reembolso não encontrado.");
         return;
       }
-      console.log(
-        refund.id,
-        expenseType,
-        totalValue,
-        description,
-        quantityType
-      );
       let expenseId = await _refundService.createExpense(
         refund.id,
         expenseType,

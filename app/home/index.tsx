@@ -241,7 +241,7 @@ export default function Home() {
           displayMonth={displayMonth}
           displayYear={displayYear}
           reverseTotalType={true}
-          containerClassName="bg-white w-full h-2/6 flex flex-col rounded-lg mt-7 shadow-md border-l-4 border-l-[#FF8C00]"
+          containerClassName="bg-white w-full h-[45%] flex flex-col rounded-lg mt-7 shadow-md border-l-4 border-l-[#FF8C00]"
         />
         {/* <View className="bg-white w-full h-1/6 flex rounded-lg mt-12 shadow-md p-5 border-l-4 border-l-[#FF8C00]">
             

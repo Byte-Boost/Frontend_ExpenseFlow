@@ -268,7 +268,7 @@ export default function RefundList() {
 
       {/* No Refunds Message */}
       {refunds.length === 0 && !isLoading && (
-        <Text className="text-gray-500 text-center">
+        <Text className="text-gray-500 text-center mb-10">
           Nenhum reembolso encontrado.
         </Text>
       )}
