@@ -46,7 +46,8 @@ interface Accordion {
 const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [refund, setRefund] = useState<Refund | null>(null);
   const [expenseType, setExpenseType] = useState("");
-  const [quantityOptions, setQuantityOptions] = useState([]);
+  type QuantityOption = { name: string; value: number };
+  const [quantityOptions, setQuantityOptions] = useState<QuantityOption[]>([]);
   const [quantityMult, setQuantityMult] = useState(0);
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [refundLimit, setRefundLimit] = useState(0);

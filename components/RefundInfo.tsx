@@ -3,7 +3,13 @@ import { formatCurrency } from "@/utils/formmatters";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Text,
+  Touchable,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface RefundInfoProps {
   selectedTotal: string | null;
@@ -37,6 +43,8 @@ const RefundInfo = ({
   const [rejectedValue, setRejectedValue] = useState(0);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isReversed, setIsReversed] = useState(reverseTotalType);
+
   const fetchSummary = async () => {
     try {
       let data = await _refundService.getSummary(
@@ -68,7 +76,7 @@ const RefundInfo = ({
   );
 
   let displayTotal = selectedTotal;
-  if (reverseTotalType) {
+  if (isReversed) {
     if (selectedTotal === "quantity") displayTotal = "value";
     else if (selectedTotal === "value") displayTotal = "quantity";
   }
@@ -83,9 +91,18 @@ const RefundInfo = ({
       {displayTotal === "quantity" && !isLoading && (
         <View className="flex-1   p-4 ">
           {/* Header */}
-          <Text className="text-lg font-bold text-black">
-            Quantidade de Reembolsos
-          </Text>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg font-bold text-black">
+              Quantidade de Reembolsos
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => setIsReversed((prev) => !prev)}
+              className="ml-2"
+            >
+              <Ionicons name="swap-horizontal" size={24} color="#FF8C00" />
+            </TouchableOpacity>
+          </View>
           <Text className="text-sm text-gray-500 mb-3">
             ({months[displayMonth - 1]} {displayYear})
           </Text>
@@ -94,7 +111,7 @@ const RefundInfo = ({
 
           {/* Total */}
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-base font-bold text-black">TOTAL</Text>
+            <Text className="text-lg font-bold text-black">TOTAL</Text>
             <Text className="text-lg font-bold text-black">
               {totalQuantity}
             </Text>
@@ -135,12 +152,20 @@ const RefundInfo = ({
         </View>
       )}
       {/* Total Value Section */}
-      {displayTotal === "value" && (
+      {displayTotal === "value" && !isLoading && (
         <View className="flex-1  p-4 ">
           {/* Header */}
-          <Text className="text-lg font-bold text-black">
-            Valores de Reembolsos
-          </Text>
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-lg font-bold text-black">
+              Valores de Reembolsos
+            </Text>
+            <TouchableOpacity
+              onPress={() => setIsReversed((prev) => !prev)}
+              className="ml-2"
+            >
+              <Ionicons name="swap-horizontal" size={24} color="#FF8C00" />
+            </TouchableOpacity>
+          </View>
           <Text className="text-sm text-gray-500 mb-3">
             ({months[displayMonth - 1]} {displayYear})
           </Text>
@@ -150,7 +175,7 @@ const RefundInfo = ({
           {/* Total to Receive */}
           <View className="flex-row justify-between items-center mb-4">
             <View className="flex-row items-center">
-              <Text className="ml-2 text-lg font-bold text-black">TOTAL</Text>
+              <Text className="text-lg font-bold text-black">TOTAL</Text>
             </View>
             <Text className="text-lg text-black font-bold">
               {formatCurrency(totalValue)}
@@ -175,7 +200,7 @@ const RefundInfo = ({
             <View className="flex-row items-center">
               <Ionicons name="hourglass" size={24} color="blue" />
               <Text className="ml-2 text-blue-600 font-semibold">
-                EM PROCESSO
+                EM PROCESSAMENTO
               </Text>
             </View>
             <Text className="text-black font-bold">
