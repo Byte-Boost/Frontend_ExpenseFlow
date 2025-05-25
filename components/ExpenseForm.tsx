@@ -48,6 +48,8 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [quantityOptions, setQuantityOptions] = useState([]);
   const [quantityMult, setQuantityMult] = useState(0);
   const [expenseLimit, setExpenseLimit] = useState(0);
+  const [refundLimit, setRefundLimit] = useState(0);
+  const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
 
   const [isFirstAction, setIsFirstAction] = useState(true);
 
@@ -63,7 +65,16 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     const project_info = await _projectService.getProjectById(projectId);
     const preferences = project_info.preferences;
     if (preferences) {
-      setExpenseLimit(preferences.expenseLimit ?? Number.MAX_SAFE_INTEGER);
+      setExpenseLimit(
+        preferences.expenseLimit == null || preferences.expenseLimit === 0
+          ? Number.MAX_SAFE_INTEGER
+          : preferences.expenseLimit
+      );
+      setRefundLimit(
+        preferences.refundLimit == null || preferences.refundLimit === 0
+          ? Number.MAX_SAFE_INTEGER
+          : preferences.refundLimit
+      );
       setQuantityOptions(
         preferences.quantityValues.map((item: { [key: string]: number }) => ({
           name: Object.keys(item)[0],
@@ -358,10 +369,43 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       )
     );
   }, [quantityMult]);
+  useEffect(() => {
+    const total = accordions.reduce((sum, accordion) => {
+      if (accordion.isSaved) {
+        return sum + accordion.totalValue;
+      }
+      return sum;
+    }, 0);
+    setCurrentRefundTotal(total);
+  }, [accordions]);
+
   return (
     <ScrollView className="p-5  h-full ">
-      <Text className="text-xl font-bold text-center mb-6 bg-white rounded-lg shadow-md p-4 border-l-4 border-l-[#FF8C00]">
-        {projectName}
+      <View className="flex flex-row items-center mb-2 bg-white rounded-lg shadow-md p-4 border-l-4 border-l-[#FF8C00]">
+        <View className="flex-1 items-center">
+          <Text className="text-xl font-bold text-center">{projectName}</Text>
+        </View>
+        <View className="ml-3">
+          <Ionicons name="information-circle" size={20} color={"gray"} />
+        </View>
+      </View>
+      <Text className="text-start  mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-l-[#FF8C00]">
+        <View className="flex-row justify-between">
+          <Text className="text-lg   text-left">{"Limite de Despesa: "}</Text>
+          <Text className="text-lg font-bold text-right">
+            {expenseLimit == Number.MAX_SAFE_INTEGER
+              ? "Ilimitado"
+              : formatCurrency(expenseLimit)}
+          </Text>
+        </View>
+        <View className="flex-row justify-between">
+          <Text className="text-lg text-left">{"Limite por Reembolso: "}</Text>
+          <Text className="text-lg font-bold text-right">
+            {refundLimit == Number.MAX_SAFE_INTEGER
+              ? "Ilimitado"
+              : formatCurrency(refundLimit)}
+          </Text>
+        </View>
       </Text>
       <View className=" bg-white rounded-lg shadow-md p-4 border-l-4">
         {accordions.map((accordion) => (
@@ -507,7 +551,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
             {accordion.totalValue > expenseLimit ? (
               <Text className="text-md pb-2 font-bold text-[#e3be22]">
                 {" "}
-                Você está acima do limite de {expenseLimit}
+                Você está acima do limite de {formatCurrency(expenseLimit)}
               </Text>
             ) : null}
 
@@ -598,15 +642,40 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               </View>
             )}
 
-            <View className="bg-[#f0f0f0] p-4 rounded-lg mb-6">
-              <Text className="text-sm font-bold text-[#6B7280] pb-2">
-                VALOR TOTAL
-              </Text>
-              <Text className="text-4xl font-bold ">
+            <View
+              className={`bg-[#f0f0f0] p-4 rounded-lg mb-6 ${
+                currentRefundTotal > refundLimit
+                  ? "border-red-600  border-4"
+                  : ""
+              }`}
+            >
+              <View className="flex-row items-center justify-between">
+                <Text className="text-sm text-left font-bold text-[#6B7280] pb-2">
+                  VALOR TOTAL
+                </Text>
+                {currentRefundTotal > refundLimit ? (
+                  <Ionicons name="warning" size={20} color="red" />
+                ) : null}
+              </View>
+              <Text
+                className={`text-4xl font-bold ${
+                  currentRefundTotal > refundLimit
+                    ? "text-red-600"
+                    : "text-black"
+                }`}
+              >
                 {formatCurrency(accordion.totalValue)}
               </Text>
             </View>
-
+            {currentRefundTotal > refundLimit ? (
+              <View className="flex-row items-center mb-4">
+                {<Ionicons name="warning" size={20} color="red" />}
+                <Text className="text-lg m-4 font-bold text-red-500">
+                  {" Você está acima do limite de "}
+                  {formatCurrency(refundLimit)}
+                </Text>
+              </View>
+            ) : null}
             {/* Save Accordion | Send to Back  */}
             <TouchableOpacity
               className={`w-full p-5 mb-10 rounded-lg ${

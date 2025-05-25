@@ -288,7 +288,6 @@ export default function RefundList() {
                 months={months}
                 displayMonth={displayMonth}
                 displayYear={displayYear}
-                refunds={refunds}
               />
             )}
             {/* Filters */}

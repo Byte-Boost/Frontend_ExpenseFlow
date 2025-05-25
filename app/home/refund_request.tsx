@@ -73,7 +73,7 @@ const RefundRequestScreen = () => {
                 <Text className="text-xl font-semibold text-[#333333]">
                   {item.name}
                 </Text>
-                <Ionicons name="folder" size={24} color="#FF8C00" />
+                <Ionicons name="cube" size={24} color="gray" />
               </TouchableOpacity>
             </View>
           )}

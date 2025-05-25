@@ -1,5 +1,8 @@
+import RefundService from "@/services/refundService";
 import { formatCurrency } from "@/utils/formmatters";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import { Text, View } from "react-native";
 
 interface RefundInfoProps {
@@ -7,24 +10,59 @@ interface RefundInfoProps {
   months: string[];
   displayMonth: number;
   displayYear: number;
-  refunds: {
-    date: string;
-    status: string;
-    totalValue: number;
-  }[];
   containerClassName?: string;
   reverseTotalType?: boolean;
 }
+
+const _refundService = new RefundService();
 
 const RefundInfo = ({
   selectedTotal,
   months,
   displayMonth,
   displayYear,
-  refunds,
   containerClassName = "flex-row justify-between mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-r-4 border-[#FF8C00]",
   reverseTotalType = false,
 }: RefundInfoProps) => {
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
+
+  const [approvedCount, setApprovedCount] = useState(0);
+  const [approvedValue, setApprovedValue] = useState(0);
+
+  const [inProcessCount, setInProcessCount] = useState(0);
+  const [inProcessValue, setInProcessValue] = useState(0);
+
+  const [rejectedCount, setRejectedCount] = useState(0);
+  const [rejectedValue, setRejectedValue] = useState(0);
+  const fetchSummary = async () => {
+    try {
+      let data = await _refundService.getSummary(
+        displayMonth.toString(),
+        displayYear.toString()
+      );
+      setApprovedCount(data["approved"].quantity);
+      setApprovedValue(data["approved"].totalValue);
+
+      setInProcessCount(data["in-process"].quantity);
+      setInProcessValue(data["in-process"].totalValue);
+
+      setRejectedCount(data["rejected"].quantity);
+      setRejectedValue(data["rejected"].totalValue);
+
+      setTotalQuantity(data.totalQuantity);
+      setTotalValue(data.totalValue);
+    } catch (e) {
+      console.error("Error fetching summary:", e);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSummary();
+    }, [])
+  );
+
   let displayTotal = selectedTotal;
   if (reverseTotalType) {
     if (selectedTotal === "quantity") displayTotal = "value";
@@ -52,17 +90,7 @@ const RefundInfo = ({
               />
               <Text className="font-semibold text-lg">
                 TOTAL:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter((refund) =>
-                      refund.date.startsWith(
-                        `${displayYear}-${displayMonth
-                          .toString()
-                          .padStart(2, "0")}`
-                      )
-                    ).length
-                  }
-                </Text>
+                <Text className="text-black font-bold">{totalQuantity}</Text>
               </Text>
             </View>
 
@@ -76,18 +104,7 @@ const RefundInfo = ({
               />
               <Text className="font-semibold text-green-500 text-lg">
                 APROVADOS:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "approved"
-                    ).length
-                  }
-                </Text>
+                <Text className="text-black font-bold">{approvedCount}</Text>
               </Text>
             </View>
 
@@ -101,18 +118,7 @@ const RefundInfo = ({
               />
               <Text className="text-blue-500 text-lg ">
                 EM PROCESSAMENTO:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "in-process"
-                    ).length
-                  }
-                </Text>
+                <Text className="text-black font-bold">{inProcessCount}</Text>
               </Text>
             </View>
 
@@ -126,18 +132,7 @@ const RefundInfo = ({
               />
               <Text className="font-semibold text-red-500 text-lg">
                 REJEITADOS:{" "}
-                <Text className="text-black font-bold">
-                  {
-                    refunds.filter(
-                      (refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        ) && refund.status === "rejected"
-                    ).length
-                  }
-                </Text>
+                <Text className="text-black font-bold">{rejectedCount}</Text>
               </Text>
             </View>
           </View>
@@ -162,18 +157,7 @@ const RefundInfo = ({
                   className="mr-2"
                 />
                 <Text className="font-semibold text-lg">
-                  Total a Receber :{" "}
-                  {formatCurrency(
-                    refunds
-                      .filter((refund) =>
-                        refund.date.startsWith(
-                          `${displayYear}-${displayMonth
-                            .toString()
-                            .padStart(2, "0")}`
-                        )
-                      )
-                      .reduce((sum, refund) => sum + refund.totalValue, 0)
-                  )}
+                  Total a Receber : {formatCurrency(totalValue)}
                 </Text>
               </View>
               {"\n"}
@@ -187,18 +171,7 @@ const RefundInfo = ({
                 <Text className=" text-lg text-green-500">
                   APROVADOS:{" "}
                   <Text className="text-black font-bold text-lg ">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "approved"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
+                    {formatCurrency(approvedValue)}
                   </Text>
                 </Text>
               </View>
@@ -213,18 +186,7 @@ const RefundInfo = ({
                 <Text className="text-blue-500 text-lg">
                   EM PROCESSO:{" "}
                   <Text className="text-black font-bold">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "in-process"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
+                    {formatCurrency(inProcessValue)}
                   </Text>
                 </Text>
               </View>
@@ -239,18 +201,7 @@ const RefundInfo = ({
                 <Text className="text-red-500 text-lg">
                   REJEITADOS:{" "}
                   <Text className="text-black font-bold">
-                    {formatCurrency(
-                      refunds
-                        .filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "rejected"
-                        )
-                        .reduce((sum, refund) => sum + refund.totalValue, 0)
-                    )}
+                    {formatCurrency(rejectedValue)}
                   </Text>
                 </Text>
               </View>
