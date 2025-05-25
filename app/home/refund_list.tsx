@@ -1,11 +1,12 @@
 import {
   ActivityIndicator,
   FlatList,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import RefundService from "@/services/refundService";
@@ -13,6 +14,9 @@ import ProjectService from "@/services/projectService";
 import { formatCurrency } from "@/utils/formmatters";
 import RNPickerSelect from "react-native-picker-select";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import Refund from "@/utils/refund";
+import RefundInfo from "@/components/RefundInfo";
+import Pagination from "@/components/Pagination";
 
 const _refundService = new RefundService();
 const _projectService = new ProjectService();
@@ -32,6 +36,10 @@ export default function RefundList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [maxPages, setMaxPages] = useState(1);
+
   if (displayMonth < 1) {
     setDisplayMonth(12);
     setDisplayYear(displayYear - 1);
@@ -44,21 +52,24 @@ export default function RefundList() {
     useCallback(() => {
       const fetchRefunds = async () => {
         try {
+          setIsLoading(true);
           const response = await _refundService.getRefunds(
             displayMonth.toString(),
-            displayYear.toString()
+            displayYear.toString(),
+            page,
+            limit
           );
-          setRefunds(response);
+          setMaxPages(response.maxPages);
+          setRefunds(response.refunds);
         } catch (error) {
           console.error("Error fetching refunds:", error);
         } finally {
-          // Ensure that the loading state is updated when refunds are fetched
           setIsLoading(false);
         }
       };
 
       fetchRefunds();
-    }, [displayMonth, displayYear])
+    }, [displayMonth, displayYear, page])
   );
 
   // Disabled this for now as i don't know if it's good feedback for the user
@@ -79,7 +90,7 @@ export default function RefundList() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const projects = await _projectService.getProjects();
+        const projects = await _projectService.getProjects(1, 15, true);
         const formattedItems = projects.map(
           (project: { name: string; id: string }) => ({
             label: project.name,
@@ -143,18 +154,21 @@ export default function RefundList() {
 
   const renderItem = ({ item }: { item: RefundItem }) => (
     <TouchableOpacity
-      className={`p-4 bg-white mb-2 rounded-lg shadow-md border-l-4 ${sideColors[item.status]}`}
+      className={`p-4 bg-white mb-2 rounded-lg shadow-md border-l-4 ${
+        sideColors[item.status]
+      }`}
       onPress={() =>
         router.push({
-          pathname: '/refund/refund_details',
+          pathname: "/refund/refund_details",
           params: {
             id: item.id,
             status: item.status,
             // descricao: item.projectId,
             totalValue: String(item.totalValue),
             date: item.date,
-            projectName: items.find((project) => project.value === item.projectId)?.label ||
-            "",
+            projectName:
+              items.find((project) => project.value === item.projectId)
+                ?.label || "",
             projectId: item.projectId,
           },
         })
@@ -251,318 +265,6 @@ export default function RefundList() {
           </TouchableOpacity>
         </View>
       </View>
-      {/* Conditional Rendering of Totals */}
-      {isTotalsVisible && (
-        <View className="flex-row justify-between mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-r-4 border-[#FF8C00]">
-          {/* Total Refunds Section */}
-          {selectedTotal === "quantity" && (
-            <View className="flex-1 flex-col items-center rounded-xl px-4 py-2">
-              <View className="flex flex-col items-start">
-                <Text className="font-bold text-xl pb-2 flex-row items-center">
-                  <Text>
-                    Reembolsos de {months[displayMonth - 1]} {displayYear}
-                  </Text>
-                </Text>
-
-                {/* Total Count Section */}
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="calculator"
-                    size={24}
-                    color="black"
-                    className="mr-2"
-                  />
-                  <Text className="font-semibold text-lg">
-                    TOTAL:{" "}
-                    <Text className="text-black font-bold">
-                      {
-                        refunds.filter((refund) =>
-                          refund.date.startsWith(
-                            `${displayYear}-${displayMonth
-                              .toString()
-                              .padStart(2, "0")}`
-                          )
-                        ).length
-                      }
-                    </Text>
-                  </Text>
-                </View>
-
-                {/* Aprovados (Approved) Section */}
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="checkmark-circle-sharp"
-                    size={26}
-                    color="green"
-                    className="mr-2"
-                  />
-                  <Text className="font-semibold text-green-500 text-lg">
-                    APROVADOS:{" "}
-                    <Text className="text-black font-bold">
-                      {
-                        refunds.filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "approved"
-                        ).length
-                      }
-                    </Text>
-                  </Text>
-                </View>
-
-                {/* Em Processamento (In-process) Section */}
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="hourglass-sharp"
-                    size={26}
-                    color="blue"
-                    className="mr-2"
-                  />
-                  <Text className="text-blue-500 text-lg ">
-                    EM PROCESSAMENTO:{" "}
-                    <Text className="text-black font-bold">
-                      {
-                        refunds.filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "in-process"
-                        ).length
-                      }
-                    </Text>
-                  </Text>
-                </View>
-
-                {/* Rejeitados (Rejected) Section */}
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="close-circle-sharp"
-                    size={26}
-                    color="red"
-                    className="mr-2"
-                  />
-                  <Text className="font-semibold text-red-500 text-lg">
-                    REJEITADOS:{" "}
-                    <Text className="text-black font-bold">
-                      {
-                        refunds.filter(
-                          (refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            ) && refund.status === "rejected"
-                        ).length
-                      }
-                    </Text>
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Total Value Section */}
-          {selectedTotal === "value" && (
-            <View className="flex-1 flex-col items-center rounded-xl px-4 py-2">
-              <View className="flex items-start">
-                <Text className="font-bold text-xl pb-2 flex-row items-center">
-                  <Text>
-                    Reembolsos de {months[displayMonth - 1]} {displayYear}
-                  </Text>
-                </Text>
-                <Text>
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="cash-outline"
-                      size={24}
-                      color="black"
-                      className="mr-2"
-                    />
-                    <Text className="font-semibold text-lg">
-                      Total a Receber :{" "}
-                      {formatCurrency(
-                        refunds
-                          .filter((refund) =>
-                            refund.date.startsWith(
-                              `${displayYear}-${displayMonth
-                                .toString()
-                                .padStart(2, "0")}`
-                            )
-                          )
-                          .reduce((sum, refund) => sum + refund.totalValue, 0)
-                      )}
-                    </Text>
-                  </View>
-                  {"\n"}
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="checkmark-circle-sharp"
-                      size={24}
-                      color="green"
-                      className="mr-2"
-                    />
-                    <Text className=" text-lg text-green-500">
-                      APROVADOS:{" "}
-                      <Text className="text-black font-bold text-lg ">
-                        {formatCurrency(
-                          refunds
-                            .filter(
-                              (refund) =>
-                                refund.date.startsWith(
-                                  `${displayYear}-${displayMonth
-                                    .toString()
-                                    .padStart(2, "0")}`
-                                ) && refund.status === "approved"
-                            )
-                            .reduce((sum, refund) => sum + refund.totalValue, 0)
-                        )}
-                      </Text>
-                    </Text>
-                  </View>
-                  {"\n"}
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="hourglass-sharp"
-                      size={24}
-                      color="blue"
-                      className="mr-2"
-                    />
-                    <Text className="text-blue-500 text-lg">
-                      EM PROCESSO:{" "}
-                      <Text className="text-black font-bold">
-                        {formatCurrency(
-                          refunds
-                            .filter(
-                              (refund) =>
-                                refund.date.startsWith(
-                                  `${displayYear}-${displayMonth
-                                    .toString()
-                                    .padStart(2, "0")}`
-                                ) && refund.status === "in-process"
-                            )
-                            .reduce((sum, refund) => sum + refund.totalValue, 0)
-                        )}
-                      </Text>
-                    </Text>
-                  </View>
-                  {"\n"}
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="close-circle-sharp"
-                      size={24}
-                      color="red"
-                      className="mr-2"
-                    />
-                    <Text className="text-red-500 text-lg">
-                      REJEITADOS:{" "}
-                      <Text className="text-black font-bold">
-                        {formatCurrency(
-                          refunds
-                            .filter(
-                              (refund) =>
-                                refund.date.startsWith(
-                                  `${displayYear}-${displayMonth
-                                    .toString()
-                                    .padStart(2, "0")}`
-                                ) && refund.status === "rejected"
-                            )
-                            .reduce((sum, refund) => sum + refund.totalValue, 0)
-                        )}
-                      </Text>
-                    </Text>
-                  </View>
-                </Text>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
-      {/* Filters */}
-      {isFilterVisible && (
-        <View className="mb-6">
-          <Text className="text-lg font-semibold mb-3 text-gray-800">
-            Filtros
-          </Text>
-          <View className="flex-row justify-between gap-4">
-            {/* Status Filter */}
-            <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
-              <Ionicons
-                name="filter"
-                size={24}
-                color="black"
-                style={{ marginRight: 8 }}
-              />
-              <View className="flex-1">
-                <RNPickerSelect
-                  onValueChange={(value) => setSelectedStatus(value)}
-                  placeholder={{
-                    label: "Selecione Status",
-                    value: null,
-                    color: "#9EA0A4",
-                  }}
-                  items={[
-                    { label: "Em processo", value: "in-process" },
-                    { label: "Aprovado", value: "approved" },
-                    { label: "Rejeitado", value: "rejected" },
-                  ]}
-                  useNativeAndroidPickerStyle={false}
-                  style={{
-                    inputAndroid: {
-                      fontSize: 14,
-                      paddingVertical: 8,
-                      paddingHorizontal: 2,
-                      color: "#000",
-                    },
-                    placeholder: {
-                      color: "#9EA0A4",
-                      fontSize: 12,
-                    },
-                  }}
-                />
-              </View>
-            </View>
-
-            {/* Project Filter */}
-            <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
-              <Ionicons
-                name="filter"
-                size={24}
-                color="black"
-                style={{ marginRight: 8 }}
-              />
-              <View className="flex-1">
-                <RNPickerSelect
-                  onValueChange={(value) => setSelectedProject(value)}
-                  placeholder={{
-                    label: "Selecione Projeto",
-                    value: null,
-                    color: "#9EA0A4",
-                  }}
-                  items={items}
-                  useNativeAndroidPickerStyle={false}
-                  style={{
-                    inputAndroid: {
-                      fontSize: 14,
-                      paddingVertical: 8,
-                      paddingHorizontal: 2,
-                      color: "#000",
-                    },
-                    placeholder: {
-                      color: "#9EA0A4",
-                      fontSize: 12,
-                    },
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
 
       {/* No Refunds Message */}
       {refunds.length === 0 && !isLoading && (
@@ -577,6 +279,112 @@ export default function RefundList() {
       )}
       {/* Refunds List */}
       <FlatList
+        ListHeaderComponent={
+          <>
+            {/* Conditional Rendering of Totals */}
+            {isTotalsVisible && (
+              <RefundInfo
+                selectedTotal={selectedTotal}
+                months={months}
+                displayMonth={displayMonth}
+                displayYear={displayYear}
+                refunds={refunds}
+              />
+            )}
+            {/* Filters */}
+            {isFilterVisible && (
+              <View className="mb-6">
+                <Text className="text-lg font-semibold mb-3 text-gray-800">
+                  Filtros
+                </Text>
+                <View className="flex-row justify-between gap-4">
+                  {/* Status Filter */}
+                  <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
+                    <Ionicons
+                      name="filter"
+                      size={24}
+                      color="black"
+                      style={{ marginRight: 8 }}
+                    />
+                    <View className="flex-1">
+                      <RNPickerSelect
+                        onValueChange={(value) => setSelectedStatus(value)}
+                        placeholder={{
+                          label: "Selecione Status",
+                          value: null,
+                          color: "#9EA0A4",
+                        }}
+                        items={[
+                          { label: "Em processo", value: "in-process" },
+                          { label: "Aprovado", value: "approved" },
+                          { label: "Rejeitado", value: "rejected" },
+                        ]}
+                        useNativeAndroidPickerStyle={false}
+                        style={{
+                          inputAndroid: {
+                            fontSize: 14,
+                            paddingVertical: 8,
+                            paddingHorizontal: 2,
+                            color: "#000",
+                          },
+                          placeholder: {
+                            color: "#9EA0A4",
+                            fontSize: 12,
+                          },
+                        }}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Project Filter */}
+                  <View className="flex-1 flex-row items-center border border-gray-400 rounded-xl px-4 py-3 bg-white shadow-sm">
+                    <Ionicons
+                      name="filter"
+                      size={24}
+                      color="black"
+                      style={{ marginRight: 8 }}
+                    />
+                    <View className="flex-1">
+                      <RNPickerSelect
+                        onValueChange={(value) => setSelectedProject(value)}
+                        placeholder={{
+                          label: "Selecione Projeto",
+                          value: null,
+                          color: "#9EA0A4",
+                        }}
+                        items={items}
+                        useNativeAndroidPickerStyle={false}
+                        style={{
+                          inputAndroid: {
+                            fontSize: 14,
+                            paddingVertical: 8,
+                            paddingHorizontal: 2,
+                            color: "#000",
+                          },
+                          placeholder: {
+                            color: "#9EA0A4",
+                            fontSize: 12,
+                          },
+                        }}
+                      />
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+          </>
+        }
+        ListFooterComponent={
+          <>
+            {refunds.length > 0 && (
+              <Pagination
+                page={page}
+                totalPages={maxPages}
+                onPageChange={(page) => setPage(page)}
+              />
+            )}
+          </>
+        }
         data={refunds
           .filter((refund) =>
             refund.date.startsWith(

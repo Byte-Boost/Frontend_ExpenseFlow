@@ -5,6 +5,4 @@ export default class ExpenseService {
     const response = await api.get(`/refund/expense/${id}`);
     return response.data;
   }
-
-  
 }

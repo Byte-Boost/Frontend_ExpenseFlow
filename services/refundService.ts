@@ -1,15 +1,26 @@
 import api from "./server";
 
 export default class RefundService {
-  public async getRefunds(displayMonth: string = "", displayYear: string = "") {
-    const response = await api.get(
-      `/refund?periodStart=${displayYear}-${displayMonth
-        .toString()
-        .padStart(2, "0")}-01&periodEnd=${displayYear}-${displayMonth
-        .toString()
-        .padStart(2, "0")}-31`
-    );
-    return response.data;
+  public async getRefunds(
+    displayMonth: string = "",
+    displayYear: string = "",
+    page: number = 1,
+    limit: number = 15,
+    arrayOnly: boolean = false
+  ) {
+    const response = await api.get("/refund", {
+      params: {
+        periodStart: `${displayYear}-${displayMonth
+          .toString()
+          .padStart(2, "0")}-01`,
+        periodEnd: `${displayYear}-${displayMonth
+          .toString()
+          .padStart(2, "0")}-31`,
+        page: page,
+        limit: limit,
+      },
+    });
+    return arrayOnly ? response.data.refunds : response.data;
   }
 
   public async getRefundById(id: number) {

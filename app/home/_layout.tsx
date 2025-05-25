@@ -1,5 +1,5 @@
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import * as SecureStore from "expo-secure-store";
 import React, { useEffect, useState } from "react";
 
@@ -17,13 +17,11 @@ export default function RootLayout() {
   const currentRoute =
     segments.length > 0 ? segments[segments.length - 1] : "index";
 
-  const [email, setEmail] = useState<string | undefined>(undefined);
   const [username, setUsername] = useState<string | undefined>("Usuário");
   const getEmail = async () => {
     const token = await SecureStore.getItemAsync("bearerToken");
     if (token) {
       const decodedToken = jwtDecode<MyJwtPayload>(token);
-      setEmail(decodedToken.email);
       setUsername(decodedToken.email.split("@")[0]);
     }
   };
@@ -129,7 +127,7 @@ export default function RootLayout() {
                 console.log(`Switching to ${newTheme} theme`);
               }}
             /> */}
-            <Ionicons name="notifications" size={24} color="#fff" />
+            {/* <Ionicons name="notifications" size={24} color="#fff" /> */}
           </View>
         </View>
         {/* Title and subtitle */}
@@ -146,9 +144,7 @@ export default function RootLayout() {
             if (route.name === "index") {
               iconName = focused ? "home" : "home-outline";
             } else if (route.name === "refund_request") {
-              iconName = focused ? "cash" : "cash-outline";
-            } else if (route.name === "account_settings") {
-              iconName = focused ? "person" : "person-outline";
+              iconName = focused ? "card" : "card-outline";
             } else if (route.name === "refund_list") {
               iconName = focused ? "list" : "list-outline";
             }
