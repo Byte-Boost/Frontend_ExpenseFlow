@@ -52,7 +52,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [refundLimit, setRefundLimit] = useState(0);
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
 
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isFirstAction, setIsFirstAction] = useState(true);
@@ -367,6 +366,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     accordions.some((accordion) => accordion.isSaved == false);
 
   useEffect(() => {
+    if (quantityOptions.length > 0 && !quantityMult) {
+      setQuantityMult(Number(quantityOptions[0].value));
+    }
     setAccordions((prevAccordions) =>
       prevAccordions.map((accordion) =>
         accordion.expenseType === ExpenseType.QUANTITY
@@ -498,6 +500,17 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                       "expenseType",
                       ExpenseType.QUANTITY
                     );
+                    if (
+                      (quantityMult === null || quantityMult === undefined) &&
+                      quantityOptions.length > 0
+                    ) {
+                      setQuantityMult(Number(quantityOptions[0].value));
+                      updateAccordion(
+                        accordion.id,
+                        "quantityType",
+                        quantityOptions[0].name
+                      );
+                    }
                   }}
                   className={`flex-1 flex-row items-center p-5 rounded-lg border ml-2 ${
                     accordion.expenseType === ExpenseType.QUANTITY
