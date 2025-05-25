@@ -3,12 +3,14 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import ProjectService from "@/services/projectService";
 import { Ionicons } from "@expo/vector-icons";
+import Pagination from "@/components/Pagination";
+import { useFocusEffect } from "expo-router";
 
 const _projectService = new ProjectService();
 
@@ -20,20 +22,28 @@ interface Project {
 const RefundRequestScreen = () => {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [projects, setProjects] = useState<Project[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(6);
+  const [maxPages, setMaxPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchProjects = async () => {
     try {
-      const response = await _projectService.getProjects();
+      const response = await _projectService.getProjects(page, limit);
       const data = response;
-      setProjects(data);
+      setMaxPages(data.maxPages);
+      setProjects(data.projects);
     } catch (error) {
       console.error("Error fetching projects:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProjects();
+    }, [page])
+  );
 
   if (!projects) {
     return (
@@ -44,37 +54,52 @@ const RefundRequestScreen = () => {
   }
 
   return (
-    <ScrollView className=" flex-1 px-6 py-8">
-      <View className="grid grid-cols-1 gap-4">
-        {!selectedProject &&
-          projects.map((project: Project, index: number) => (
-            <View
-              key={index}
-              className="bg-white rounded-lg shadow-md p-5 border-l-4 border-l-[#FF8C00]"
-            >
+    <View className="flex-1 px-6 py-8">
+      {!selectedProject ? (
+        <FlatList
+          data={projects}
+          keyExtractor={(item) => item.id.toString()}
+          ListEmptyComponent={
+            <Text className="text-gray-500 text-center">
+              Nenhum projeto encontrado.
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <View className="bg-white rounded-lg shadow-md p-5 mb-4 border-l-4 border-l-[#FF8C00]">
               <TouchableOpacity
-                onPress={() => setSelectedProject(project.id)}
-                className="flex-1  flex flex-row items-center justify-between"
+                onPress={() => setSelectedProject(item.id)}
+                className="flex flex-row items-center justify-between"
               >
                 <Text className="text-xl font-semibold text-[#333333]">
-                  {project.name}
+                  {item.name}
                 </Text>
                 <Ionicons name="folder" size={24} color="#FF8C00" />
               </TouchableOpacity>
             </View>
-          ))}
-        {selectedProject && (
-          <ExpenseForm
-            projectId={selectedProject}
-            projectName={
-              projects.find((project) => project.id === selectedProject)
-                ?.name || "Unknown Project"
-            }
-            onClose={() => setSelectedProject(null)}
-          />
-        )}
-      </View>
-    </ScrollView>
+          )}
+          ListFooterComponent={
+            <>
+              {projects.length > 0 && (
+                <Pagination
+                  page={page}
+                  totalPages={maxPages}
+                  onPageChange={(page) => setPage(page)}
+                />
+              )}
+            </>
+          }
+        />
+      ) : (
+        <ExpenseForm
+          projectId={selectedProject}
+          projectName={
+            projects.find((project) => project.id === selectedProject)?.name ||
+            "Unknown Project"
+          }
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
+    </View>
   );
 };
 

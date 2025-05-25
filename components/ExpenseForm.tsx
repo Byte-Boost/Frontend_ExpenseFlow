@@ -521,6 +521,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 borderColor: "#ccc",
                 marginBottom: 20,
               }}
+              className="border border-[#ccc]"
             >
               <MaterialIcons
                 name={
