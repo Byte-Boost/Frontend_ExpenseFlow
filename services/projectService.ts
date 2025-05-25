@@ -2,9 +2,18 @@ import api from "./server";
 
 export default class ProjectService {
   // NEED TEST
-  public async getProjects() {
-    const response = await api.get(`/project/`);
-    return response.data;
+  public async getProjects(
+    page: number = 1,
+    limit: number = 15,
+    arrayOnly: boolean = false
+  ) {
+    const response = await api.get(`/project/`, {
+      params: {
+        page: page,
+        limit: limit,
+      },
+    });
+    return arrayOnly ? response.data.projects : response.data;
   }
 
   // NEED TEST

@@ -1,12 +1,13 @@
-export default class Refund {
-    public id: number
-    public type: string | undefined
-    public value: number | undefined
-    public description: string | undefined
-    public file: string | undefined
-    public status: string | undefined
+import Expense from "./expense";
 
-    constructor(id: number) {
-        this.id = id
-    }
+export default class Refund {
+  public id: number;
+  public value: number | undefined;
+  public status: string | undefined;
+  public Expenses: Expense[] | undefined;
+  public rejectionReason: string | undefined;
+
+  constructor(id: number) {
+    this.id = id;
+  }
 }
