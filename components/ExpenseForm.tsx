@@ -54,7 +54,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
   const [isFirstAction, setIsFirstAction] = useState(true);
 
   const [accordions, setAccordions] = useState<Accordion[]>([]);
@@ -252,11 +252,11 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       updateAccordion(id, "isSaved", true);
       updateAccordion(id, "expenseId", expenseId);
       Alert.alert("Sucesso", "Despesa salva com sucesso!");
-      setIsSubmitting(false);
     } catch (err) {
-      setIsSubmitting(false);
       console.log(err);
       Alert.alert("Erro", "Erro ao salvar a despesa.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -314,19 +314,29 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   };
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    if (isFirstAction || refund == null) {
-      Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
-      setIsSubmitting(false);
-      return;
+    setIsSubmittingRefund(true);
+    try {
+      if (isFirstAction || refund == null) {
+        Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
+        setIsSubmitting(false);
+        return;
+      }
+      await _refundService.closeRefund(refund.id).then(() => {
+        setAccordions([]);
+        setExpandedAccordionId(null);
+        setIsFirstAction(true);
+        setIsSubmitting(false);
+        Alert.alert("Sucesso", "Pedido de reembolso enviado com sucesso!");
+      });
+    } catch (error) {
+      console.error("Error closing refund:", error);
+      Alert.alert(
+        "Erro",
+        "Não foi possível enviar o pedido de reembolso. Tente novamente."
+      );
+    } finally {
+      setIsSubmittingRefund(false);
     }
-    await _refundService.closeRefund(refund.id).then(() => {
-      setAccordions([]);
-      setExpandedAccordionId(null);
-      setIsFirstAction(true);
-      setIsSubmitting(false);
-      Alert.alert("Sucesso", "Pedido de reembolso enviado com sucesso!");
-    });
   };
 
   const accordionHasError = (accordion: Accordion) => {
@@ -686,7 +696,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               onPress={() => saveAccordion(accordion.id)}
               disabled={accordion.isSaved || accordionHasError(accordion)}
             >
-              {isSubmitting && !allAccordionsCompleted ? (
+              {isSubmitting ? (
                 <View className="flex-1 justify-center items-center ">
                   <ActivityIndicator size="large" color="black" />
                 </View>
@@ -716,7 +726,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
           onPress={createNewRefund}
           disabled={accordions.some((accordion) => accordion.isSaved == false)}
         >
-          {isSubmitting && <></>}
           <Text
             className={`text-center font-bold ${
               (expandedAccordionId !== null && !allAccordionsCompleted) ||
@@ -769,7 +778,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               isSubmitDisabled ? "bg-gray-300" : "bg-green-500"
             }`}
           >
-            {isSubmitting && allAccordionsCompleted ? (
+            {isSubmittingRefund ? (
               <View className="flex-1 justify-center items-center ">
                 <ActivityIndicator size="large" color="black" />
               </View>
