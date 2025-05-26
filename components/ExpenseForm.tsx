@@ -40,7 +40,9 @@ interface Accordion {
   inputValue: number;
   totalValue: number;
   isSaved: false;
+  isSubmitting?: boolean;
   quantityType?: string;
+  quantityMult?: number;
 }
 
 const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
@@ -48,12 +50,10 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [expenseType, setExpenseType] = useState("");
   type QuantityOption = { name: string; value: number };
   const [quantityOptions, setQuantityOptions] = useState<QuantityOption[]>([]);
-  const [quantityMult, setQuantityMult] = useState(0);
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [refundLimit, setRefundLimit] = useState(0);
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
   const [isFirstAction, setIsFirstAction] = useState(true);
 
@@ -198,7 +198,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 totalValue:
                   value *
                   (accordion.expenseType === ExpenseType.QUANTITY
-                    ? quantityMult ?? 1
+                    ? accordion.quantityMult ?? 1
                     : 1),
               }
             : accordion
@@ -208,7 +208,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   };
 
   const saveAccordion = async (id: number) => {
-    setIsSubmitting(true);
+    setAccordions((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, isSubmitting: true } : a))
+    );
     const accordion = accordions.find((accordion) => accordion.id === id);
     if (!accordion) {
       Alert.alert("Erro", "Accordion não encontrado.");
@@ -219,16 +221,20 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       accordion;
 
     if (accordionHasError(accordion)) {
-      setIsSubmitting(false);
       Alert.alert(
         "Aviso",
         "Preencha todos os campos obrigatórios antes de salvar."
+      );
+      setAccordions((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
       );
       return;
     }
     try {
       if (!attachment) {
-        setIsSubmitting(false);
+        setAccordions((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+        );
 
         Alert.alert("Erro", "Anexo de recibo não encontrado.");
         return;
@@ -237,7 +243,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         encoding: FileSystem.EncodingType.Base64,
       });
       if (!refund) {
-        setIsSubmitting(false);
+        setAccordions((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+        );
         Alert.alert("Erro", "Reembolso não encontrado.");
         return;
       }
@@ -256,7 +264,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       console.log(err);
       Alert.alert("Erro", "Erro ao salvar a despesa.");
     } finally {
-      setIsSubmittingRefund(false);
+      setAccordions((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+      );
     }
   };
 
@@ -318,14 +328,12 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     try {
       if (isFirstAction || refund == null) {
         Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
-        setIsSubmitting(false);
         return;
       }
       await _refundService.closeRefund(refund.id).then(() => {
         setAccordions([]);
         setExpandedAccordionId(null);
         setIsFirstAction(true);
-        setIsSubmitting(false);
         Alert.alert("Sucesso", "Pedido de reembolso enviado com sucesso!");
       });
     } catch (error) {
@@ -377,20 +385,22 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     accordions.some((accordion) => accordion.isSaved == false);
 
   useEffect(() => {
-    if (quantityOptions.length > 0 && !quantityMult) {
-      setQuantityMult(Number(quantityOptions[0].value));
+    let quantityMult = 0;
+    if (quantityOptions.length > 0) {
+      quantityMult = quantityOptions[0].value;
     }
     setAccordions((prevAccordions) =>
       prevAccordions.map((accordion) =>
         accordion.expenseType === ExpenseType.QUANTITY
           ? {
               ...accordion,
+              quantityMult: Number(quantityOptions[0].value),
               totalValue: accordion.inputValue * (quantityMult || 1),
             }
           : accordion
       )
     );
-  }, [quantityMult]);
+  }, []);
   useEffect(() => {
     const total = accordions.reduce((sum, accordion) => {
       if (accordion.isSaved) {
@@ -473,6 +483,11 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                     "expenseType",
                     ExpenseType.VALUE
                   );
+                  updateAccordion(
+                    accordion.id,
+                    "totalValue",
+                    accordion.inputValue
+                  );
                 }}
                 className={`flex-1 flex-row items-center p-5 rounded-lg border mr-2 ${
                   accordion.expenseType === ExpenseType.VALUE
@@ -511,17 +526,31 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                       "expenseType",
                       ExpenseType.QUANTITY
                     );
+
                     if (
-                      (quantityMult === null || quantityMult === undefined) &&
+                      (accordion.quantityMult === null ||
+                        accordion.quantityMult === undefined) &&
                       quantityOptions.length > 0
                     ) {
-                      setQuantityMult(Number(quantityOptions[0].value));
+                      updateAccordion(
+                        accordion.id,
+                        "quantityMult",
+                        Number(quantityOptions[0].value)
+                      );
                       updateAccordion(
                         accordion.id,
                         "quantityType",
                         quantityOptions[0].name
                       );
                     }
+                    updateAccordion(
+                      accordion.id,
+                      "totalValue",
+                      accordion.inputValue *
+                        (accordion.quantityMult ??
+                          quantityOptions[0]?.value ??
+                          1)
+                    );
                   }}
                   className={`flex-1 flex-row items-center p-5 rounded-lg border ml-2 ${
                     accordion.expenseType === ExpenseType.QUANTITY
@@ -554,10 +583,15 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
             {accordion.expenseType === ExpenseType.QUANTITY && (
               <TypeSelector
                 onValueChange={(value, label) => {
-                  setQuantityMult(Number(value));
+                  updateAccordion(accordion.id, "quantityMult", Number(value));
                   updateAccordion(accordion.id, "quantityType", label);
+                  updateAccordion(
+                    accordion.id,
+                    "totalValue",
+                    accordion.inputValue * Number(value)
+                  );
                 }}
-                selectedValue={""}
+                selectedValue={accordion.quantityMult?.toString() ?? ""}
                 options={quantityOptions}
               />
             )}
@@ -629,7 +663,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 >
                   <Text style={{ color: "#6B7280", fontSize: 14 }}>
                     <FontAwesome name="times" size={16} color="#6B7280" />{" "}
-                    {quantityMult}
+                    {accordion.quantityMult}
                   </Text>
                 </View>
               )}
@@ -696,7 +730,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               onPress={() => saveAccordion(accordion.id)}
               disabled={accordion.isSaved || accordionHasError(accordion)}
             >
-              {isSubmitting ? (
+              {accordion.isSubmitting ? (
                 <View className="flex-1 justify-center items-center ">
                   <ActivityIndicator size="large" color="black" />
                 </View>
