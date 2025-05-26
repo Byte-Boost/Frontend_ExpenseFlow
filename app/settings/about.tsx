@@ -36,7 +36,7 @@ export default function About() {
         <View className="border-b border-gray-300  h-0.5 w-full" />
 
         <View className="flex-1 pt-7 px-6">
-          <Text className="text-center text-gray-700 mb-2">Versão 1.0</Text>
+          <Text className="text-center text-gray-700 mb-2">Versão 1.0.3</Text>
           <Text className="text-center text-gray-600 mb-4">
             ExpenseFlow é um aplicativo para gestão e reembolso de despesas.
           </Text>

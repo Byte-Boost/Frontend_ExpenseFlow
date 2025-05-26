@@ -40,6 +40,7 @@ interface Accordion {
   inputValue: number;
   totalValue: number;
   isSaved: false;
+  isSubmitting?: boolean;
   quantityType?: string;
   quantityMult?: number;
 }
@@ -53,7 +54,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [refundLimit, setRefundLimit] = useState(0);
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
   const [isFirstAction, setIsFirstAction] = useState(true);
 
@@ -208,7 +208,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   };
 
   const saveAccordion = async (id: number) => {
-    setIsSubmitting(true);
+    setAccordions((prev) =>
+      prev.map((a) => (a.id === id ? { ...a, isSubmitting: true } : a))
+    );
     const accordion = accordions.find((accordion) => accordion.id === id);
     if (!accordion) {
       Alert.alert("Erro", "Accordion não encontrado.");
@@ -219,16 +221,20 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       accordion;
 
     if (accordionHasError(accordion)) {
-      setIsSubmitting(false);
       Alert.alert(
         "Aviso",
         "Preencha todos os campos obrigatórios antes de salvar."
+      );
+      setAccordions((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
       );
       return;
     }
     try {
       if (!attachment) {
-        setIsSubmitting(false);
+        setAccordions((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+        );
 
         Alert.alert("Erro", "Anexo de recibo não encontrado.");
         return;
@@ -237,7 +243,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
         encoding: FileSystem.EncodingType.Base64,
       });
       if (!refund) {
-        setIsSubmitting(false);
+        setAccordions((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+        );
         Alert.alert("Erro", "Reembolso não encontrado.");
         return;
       }
@@ -256,7 +264,9 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
       console.log(err);
       Alert.alert("Erro", "Erro ao salvar a despesa.");
     } finally {
-      setIsSubmittingRefund(false);
+      setAccordions((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isSubmitting: false } : a))
+      );
     }
   };
 
@@ -318,14 +328,12 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     try {
       if (isFirstAction || refund == null) {
         Alert.alert("Erro", "Crie uma nova despesa antes de enviar o pedido.");
-        setIsSubmitting(false);
         return;
       }
       await _refundService.closeRefund(refund.id).then(() => {
         setAccordions([]);
         setExpandedAccordionId(null);
         setIsFirstAction(true);
-        setIsSubmitting(false);
         Alert.alert("Sucesso", "Pedido de reembolso enviado com sucesso!");
       });
     } catch (error) {
@@ -722,7 +730,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
               onPress={() => saveAccordion(accordion.id)}
               disabled={accordion.isSaved || accordionHasError(accordion)}
             >
-              {isSubmitting ? (
+              {accordion.isSubmitting ? (
                 <View className="flex-1 justify-center items-center ">
                   <ActivityIndicator size="large" color="black" />
                 </View>
