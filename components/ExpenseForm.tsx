@@ -475,6 +475,11 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                     "expenseType",
                     ExpenseType.VALUE
                   );
+                  updateAccordion(
+                    accordion.id,
+                    "totalValue",
+                    accordion.inputValue
+                  );
                 }}
                 className={`flex-1 flex-row items-center p-5 rounded-lg border mr-2 ${
                   accordion.expenseType === ExpenseType.VALUE
@@ -513,6 +518,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                       "expenseType",
                       ExpenseType.QUANTITY
                     );
+
                     if (
                       (accordion.quantityMult === null ||
                         accordion.quantityMult === undefined) &&
@@ -529,6 +535,14 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                         quantityOptions[0].name
                       );
                     }
+                    updateAccordion(
+                      accordion.id,
+                      "totalValue",
+                      accordion.inputValue *
+                        (accordion.quantityMult ??
+                          quantityOptions[0]?.value ??
+                          1)
+                    );
                   }}
                   className={`flex-1 flex-row items-center p-5 rounded-lg border ml-2 ${
                     accordion.expenseType === ExpenseType.QUANTITY
@@ -563,8 +577,13 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 onValueChange={(value, label) => {
                   updateAccordion(accordion.id, "quantityMult", Number(value));
                   updateAccordion(accordion.id, "quantityType", label);
+                  updateAccordion(
+                    accordion.id,
+                    "totalValue",
+                    accordion.inputValue * Number(value)
+                  );
                 }}
-                selectedValue={""}
+                selectedValue={accordion.quantityMult?.toString() ?? ""}
                 options={quantityOptions}
               />
             )}
