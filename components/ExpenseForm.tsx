@@ -41,6 +41,7 @@ interface Accordion {
   totalValue: number;
   isSaved: false;
   quantityType?: string;
+  quantityMult?: number;
 }
 
 const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
@@ -48,7 +49,6 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
   const [expenseType, setExpenseType] = useState("");
   type QuantityOption = { name: string; value: number };
   const [quantityOptions, setQuantityOptions] = useState<QuantityOption[]>([]);
-  const [quantityMult, setQuantityMult] = useState(0);
   const [expenseLimit, setExpenseLimit] = useState(0);
   const [refundLimit, setRefundLimit] = useState(0);
   const [currentRefundTotal, setCurrentRefundTotal] = useState(0);
@@ -198,7 +198,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 totalValue:
                   value *
                   (accordion.expenseType === ExpenseType.QUANTITY
-                    ? quantityMult ?? 1
+                    ? accordion.quantityMult ?? 1
                     : 1),
               }
             : accordion
@@ -377,20 +377,22 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
     accordions.some((accordion) => accordion.isSaved == false);
 
   useEffect(() => {
-    if (quantityOptions.length > 0 && !quantityMult) {
-      setQuantityMult(Number(quantityOptions[0].value));
+    let quantityMult = 0;
+    if (quantityOptions.length > 0) {
+      quantityMult = quantityOptions[0].value;
     }
     setAccordions((prevAccordions) =>
       prevAccordions.map((accordion) =>
         accordion.expenseType === ExpenseType.QUANTITY
           ? {
               ...accordion,
+              quantityMult: Number(quantityOptions[0].value),
               totalValue: accordion.inputValue * (quantityMult || 1),
             }
           : accordion
       )
     );
-  }, [quantityMult]);
+  }, []);
   useEffect(() => {
     const total = accordions.reduce((sum, accordion) => {
       if (accordion.isSaved) {
@@ -512,10 +514,15 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                       ExpenseType.QUANTITY
                     );
                     if (
-                      (quantityMult === null || quantityMult === undefined) &&
+                      (accordion.quantityMult === null ||
+                        accordion.quantityMult === undefined) &&
                       quantityOptions.length > 0
                     ) {
-                      setQuantityMult(Number(quantityOptions[0].value));
+                      updateAccordion(
+                        accordion.id,
+                        "quantityMult",
+                        Number(quantityOptions[0].value)
+                      );
                       updateAccordion(
                         accordion.id,
                         "quantityType",
@@ -554,7 +561,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
             {accordion.expenseType === ExpenseType.QUANTITY && (
               <TypeSelector
                 onValueChange={(value, label) => {
-                  setQuantityMult(Number(value));
+                  updateAccordion(accordion.id, "quantityMult", Number(value));
                   updateAccordion(accordion.id, "quantityType", label);
                 }}
                 selectedValue={""}
@@ -629,7 +636,7 @@ const ExpenseForm = ({ projectId, projectName, onClose }: ExpenseFormProps) => {
                 >
                   <Text style={{ color: "#6B7280", fontSize: 14 }}>
                     <FontAwesome name="times" size={16} color="#6B7280" />{" "}
-                    {quantityMult}
+                    {accordion.quantityMult}
                   </Text>
                 </View>
               )}

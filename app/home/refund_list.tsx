@@ -1,7 +1,6 @@
 import {
   ActivityIndicator,
   FlatList,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -11,16 +10,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 
 import RefundService from "@/services/refundService";
-import ProjectService from "@/services/projectService";
 import { formatCurrency } from "@/utils/formmatters";
 import RNPickerSelect from "react-native-picker-select";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Refund from "@/utils/refund";
 import RefundInfo from "@/components/RefundInfo";
 import Pagination from "@/components/Pagination";
 
 const _refundService = new RefundService();
-const _projectService = new ProjectService();
 
 export default function RefundList() {
   const currentDate = new Date();
@@ -28,7 +24,6 @@ export default function RefundList() {
   const [displayMonth, setDisplayMonth] = useState(currentDate.getMonth() + 1);
   const [displayYear, setDisplayYear] = useState(currentDate.getFullYear());
   const [refunds, setRefunds] = useState<any[]>([]);
-  const [items, setItems] = useState<{ label: string; value: string }[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [selectedTotal, setSelectedTotal] = useState<string | null>(null);
@@ -41,6 +36,7 @@ export default function RefundList() {
   const [limit, setLimit] = useState(5);
   const [maxPages, setMaxPages] = useState(1);
 
+  // Month wrap-around logic
   if (displayMonth < 1) {
     setDisplayMonth(12);
     setDisplayYear(displayYear - 1);
@@ -49,7 +45,7 @@ export default function RefundList() {
     setDisplayYear(displayYear + 1);
   }
 
-
+  // Fetch refunds when date/page changes
   useFocusEffect(
     useCallback(() => {
       const fetchRefunds = async () => {
@@ -61,8 +57,9 @@ export default function RefundList() {
             page,
             limit
           );
+          console.log("Refunds fetched:", response);
           setMaxPages(response.maxPages);
-          setRefunds(response.refunds);
+          setRefunds(response.refunds); 
         } catch (error) {
           console.error("Error fetching refunds:", error);
         } finally {
@@ -74,42 +71,8 @@ export default function RefundList() {
     }, [displayMonth, displayYear, page])
   );
 
-  // Disabled this for now as i don't know if it's good feedback for the user
-  // const resetFilters = () => {
-  //   setSelectedStatus(null);
-  //   setSelectedProject(null);
-  // };
-  // useEffect(() => {
-  //   resetFilters();
-  // }, [isFilterVisible]);
-
-  // Fetch what type of Total is set as true
-
   useEffect(() => {
     setSelectedTotal(process.env.EXPO_PUBLIC_TOTAL_TYPE ?? null);
-  }, []);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const projects = await _projectService.getProjects(1, 15, true);
-        const formattedItems = projects.map(
-          (project: { name: string; id: string }) => ({
-            label: project.name,
-            value: project.id,
-          })
-        );
-        setItems(formattedItems);
-      } catch (error) {
-        console.error("Erro ao buscar projetos:", error);
-      } finally {
-        if (refunds.length > 0) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchProjects();
   }, []);
 
   const months = [
@@ -139,7 +102,6 @@ export default function RefundList() {
     approved: "border-l-green-400",
   };
 
-  // Translation for status
   const translation = {
     "in-process": "Em processamento",
     rejected: "Rejeitado",
@@ -151,6 +113,7 @@ export default function RefundList() {
     status: "in-process" | "rejected" | "approved";
     totalValue: number;
     date: string;
+    Project: object;
     projectId: string;
   }
 
@@ -165,12 +128,9 @@ export default function RefundList() {
           params: {
             id: item.id,
             status: item.status,
-            // descricao: item.projectId,
             totalValue: String(item.totalValue),
             date: item.date,
-            projectName:
-              items.find((project) => project.value === item.projectId)
-                ?.label || "",
+            projectName: item.Project.name,
             projectId: item.projectId,
           },
         })
@@ -179,8 +139,8 @@ export default function RefundList() {
       <View className="flex-row items-center">
         <Text className="text-gray-600">
           Status:{" "}
-          <Text className={` ${colors[item.status]}`}>
-            {translation[item.status].toLocaleUpperCase()}
+          <Text className={`${colors[item.status]}`}>
+            {translation[item.status].toUpperCase()}
           </Text>
         </Text>
         <View className="ml-auto">
@@ -194,11 +154,7 @@ export default function RefundList() {
         Data: {new Date(item.date).toLocaleString()}
       </Text>
       <Text className="text-gray-600">
-        Projeto:{" "}
-        <Text className="font-bold">
-          {items.find((project) => project.value === item.projectId)?.label ||
-            ""}
-        </Text>
+        Projeto: <Text className="font-bold">{item.Project.name}</Text>
       </Text>
     </TouchableOpacity>
   );
@@ -208,64 +164,48 @@ export default function RefundList() {
       {/* Month and Year Selector */}
       <View className="flex-row justify-between items-center mb-4 bg-white rounded-lg shadow-md p-4 border-l-4 border-r-4 border-[#FF8C00]">
         <TouchableOpacity onPress={() => setDisplayMonth(displayMonth - 1)}>
-          <Text style={{ fontSize: 24 }}>
-            <Ionicons name="chevron-back" size={24} color="black" />
-          </Text>
+          <Ionicons name="chevron-back" size={24} color="black" />
         </TouchableOpacity>
-        <View className="flex-column items-center">
+        <View className="items-center">
           <Text className="text-xl font-bold">{months[displayMonth - 1]}</Text>
           <Text className="text-gray-600">{displayYear}</Text>
         </View>
         <TouchableOpacity onPress={() => setDisplayMonth(displayMonth + 1)}>
-          <Text style={{ fontSize: 24 }}>
-            <Ionicons name="chevron-forward" size={24} color="black" />
-          </Text>
+          <Ionicons name="chevron-forward" size={24} color="black" />
         </TouchableOpacity>
       </View>
-      {/* Toggleable Totals Section */}
-      <View className="flex-row gap-5 items-center mb-4 ">
-        <View
-          className={`max-w-16 flex-row justify-between items-center mb-4  rounded-lg shadow-md p-4 border-2 ${
+
+      {/* Totals & Filter Toggles */}
+      <View className="flex-row gap-5 items-center mb-4">
+        <TouchableOpacity
+          onPress={() => setIsTotalsVisible(!isTotalsVisible)}
+          className={`max-w-16 flex-row justify-between items-center mb-4 rounded-lg shadow-md p-4 border-2 ${
             isTotalsVisible
               ? "bg-[#FF8C00] border-transparent"
               : "bg-white border-[#FF8C00]"
           }`}
         >
-          <TouchableOpacity
-            onPress={() => setIsTotalsVisible(!isTotalsVisible)}
-            className=""
-          >
-            <Text className="text-lg font-bold ">
-              <MaterialIcons
-                name="equalizer"
-                size={24}
-                color={isTotalsVisible ? "#fff" : "#222"}
-              />
-            </Text>
-          </TouchableOpacity>
-        </View>
-        {/* Toggleable Filter Section */}
-        <View
-          className={`max-w-16 flex-row justify-between items-center mb-4  rounded-lg shadow-md p-4 border-2 
-          ${
+          <MaterialIcons
+            name="equalizer"
+            size={24}
+            color={isTotalsVisible ? "#fff" : "#222"}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setIsFilterVisible(!isFilterVisible)}
+          className={`max-w-16 flex-row justify-between items-center mb-4 rounded-lg shadow-md p-4 border-2 ${
             isFilterVisible
               ? "bg-[#FF8C00] border-transparent"
               : "bg-white border-[#FF8C00]"
           }`}
         >
-          <TouchableOpacity
-            onPress={() => setIsFilterVisible(!isFilterVisible)}
-            className=""
-          >
-            <Text className="text-lg font-bold ">
-              <Ionicons
-                name="filter"
-                size={19}
-                color={isFilterVisible ? "#fff" : "#222"}
-              />
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <Ionicons
+            name="filter"
+            size={19}
+            color={isFilterVisible ? "#fff" : "#222"}
+          />
+        </TouchableOpacity>
       </View>
 
       {/* No Refunds Message */}
@@ -275,15 +215,14 @@ export default function RefundList() {
         </Text>
       )}
       {isLoading && refunds.length === 0 && (
-        <View className="flex-1 justify-center items-center ">
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#FF8C00" />
         </View>
       )}
-      {/* Refunds List */}
+
       <FlatList
         ListHeaderComponent={
           <>
-            {/* Conditional Rendering of Totals */}
             {isTotalsVisible && (
               <RefundInfo
                 selectedTotal={selectedTotal}
@@ -292,7 +231,6 @@ export default function RefundList() {
                 displayYear={displayYear}
               />
             )}
-            {/* Filters */}
             {isFilterVisible && (
               <View className="mb-6">
                 <Text className="text-lg font-semibold mb-3 text-gray-800">
@@ -309,7 +247,7 @@ export default function RefundList() {
                     />
                     <View className="flex-1">
                       <RNPickerSelect
-                        onValueChange={(value) => setSelectedStatus(value)}
+                        onValueChange={setSelectedStatus}
                         placeholder={{
                           label: "Selecione Status",
                           value: null,
@@ -347,13 +285,18 @@ export default function RefundList() {
                     />
                     <View className="flex-1">
                       <RNPickerSelect
-                        onValueChange={(value) => setSelectedProject(value)}
+                        onValueChange={setSelectedProject}
                         placeholder={{
-                          label: "Selecione Projeto",
+                          label: "Filtrar por nome do projeto",
                           value: null,
                           color: "#9EA0A4",
                         }}
-                        items={items}
+                        items={Array.from(
+                          new Set(refunds.map((r) => r.Project.name))
+                        ).map((name) => ({
+                          label: name,
+                          value: name,
+                        }))}
                         useNativeAndroidPickerStyle={false}
                         style={{
                           inputAndroid: {
@@ -376,31 +319,25 @@ export default function RefundList() {
           </>
         }
         ListFooterComponent={
-          <>
-            {refunds.length > 0 && (
-              <Pagination
-                page={page}
-                totalPages={maxPages}
-                onPageChange={(page) => setPage(page)}
-              />
-            )}
-          </>
+          refunds.length > 0 ? (
+            <Pagination
+              page={page}
+              totalPages={maxPages}
+              onPageChange={(page) => setPage(page)}
+            />
+          ) : null
         }
         data={refunds
-          .filter((refund) =>
-            refund.date.startsWith(
+          .filter((r) =>
+            r.date.startsWith(
               `${displayYear}-${displayMonth.toString().padStart(2, "0")}`
             )
           )
-          .filter(
-            (refund) => !selectedStatus || refund.status === selectedStatus
-          )
-          .filter(
-            (refund) => !selectedProject || refund.projectId === selectedProject
-          )}
+          .filter((r) => !selectedStatus || r.status === selectedStatus)
+          .filter((r) => !selectedProject || r.Project.name === selectedProject)}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
       />
     </View>
-  );
+  );0
 }
